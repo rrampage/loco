@@ -1,0 +1,4 @@
+Django==1.11.5
+djangorestframework==3.6.4
+Fabric==1.14.0
+gunicorn==19.7.1
