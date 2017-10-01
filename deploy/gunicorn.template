@@ -1,0 +1,12 @@
+[Unit]
+Description=Gunicorn server for loco
+
+[Service]
+Restart=on-failure  
+User=usharma01  
+WorkingDirectory=/home/usharma01/sites/loco/source  
+ExecStart=/home/usharma01/sites/loco/virtualenv/bin/gunicorn \
+    --bind unix:/tmp/loco.socket -w 16 --access-logfile ../log/gunicorn/access.log --error-logfile ../log/gunicorn/error.log  loco.wsgi:application 
+
+[Install]
+WantedBy=multi-user.target 
