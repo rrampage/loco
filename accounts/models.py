@@ -1,4 +1,4 @@
-import os
+import os, uuid
 
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
@@ -67,3 +67,11 @@ class UserOtp(BaseModel):
 
 class UserDump2(BaseModel):
     data = models.TextField(blank=True, null=True)
+
+def user_media_path(instance, filename):
+    return 'users/{0}/{1}/{2}'.format(instance.user.id, instance.unique_id, filename)
+
+class UserMedia(BaseModel):
+    media = models.FileField(upload_to=user_media_path)
+    user = models.ForeignKey(User)
+    unique_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
