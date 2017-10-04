@@ -4,6 +4,8 @@ from django.db import models
 
 from loco.models import BaseModel
 
+from . import constants
+
 
 class Team(BaseModel):
     name = models.CharField(max_length=60)
@@ -72,17 +74,22 @@ class TeamMembership(BaseModel):
         (ROLE_MANAGER, 'manager'),
     )
 
-
-    STATUS_INVITED = 'invited'
-    STATUS_ACCEPTED = 'accepted'
-
     STATUS_CHOICES = (
-        (STATUS_INVITED, 'invited'),
-        (STATUS_ACCEPTED, 'accepted'),
+        (constants.STATUS_INVITED, 'invited'),
+        (constants.STATUS_ACCEPTED, 'accepted'),
+        (constants.STATUS_REJECTED, 'rejected'),
     )
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="invites")
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default=ROLE_MEMBER)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_INVITED)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=constants.STATUS_INVITED)
+
+    def accept(self):
+        self.status = constants.STATUS_ACCEPTED
+        self.save()
+
+    def reject(self):
+        self.status = constants.STATUS_REJECTED
+        self.save()

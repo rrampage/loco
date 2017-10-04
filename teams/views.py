@@ -7,9 +7,10 @@ from rest_framework.views import APIView
 
 from loco import utils
 
+from . import constants
 from .models import Team, TeamMembership
 from .serializers import TeamSerializer, TeamMembershipSerializer
-from .permissions import IsTeamMember, IsAdminOrReadOnly, IsAdminOrMe
+from .permissions import IsTeamMember, IsAdminOrReadOnly, IsAdmin
 
 from accounts.models import User
 
@@ -17,7 +18,7 @@ class TeamList(APIView):
     permission_classes = (permissions.IsAuthenticated, )
 
     def get(self, request, format=None):
-        memberships = TeamMembership.objects.filter(user=request.user)
+        memberships = TeamMembership.objects.filter(user=request.user).exclude(status=constants.STATUS_REJECTED)
         serializer = TeamMembershipSerializer(memberships, many=True)
         return Response(data=serializer.data)
 
@@ -61,7 +62,7 @@ class TeamMembershipList(APIView):
     def get(self, request, team_id, format=None):
         team = get_object_or_404(Team, id=team_id)
         self.check_object_permissions(self.request, team)
-        memberships = TeamMembership.objects.filter(team=team)
+        memberships = TeamMembership.objects.filter(team=team).exclude(status=constants.STATUS_REJECTED)
         serializer = TeamMembershipSerializer(memberships, many=True)
         return Response(serializer.data)
 
@@ -88,7 +89,7 @@ class TeamMembershipList(APIView):
         return Response(data={"errors": "Membership exists"}, status=status.HTTP_400_BAD_REQUEST)
 
 class TeamMembershipDetail(APIView):
-    permission_classes = (permissions.IsAuthenticated, IsAdminOrMe)
+    permission_classes = (permissions.IsAuthenticated, IsAdmin)
 
     def put(self, request, membership_id, format=None):
         membership = get_object_or_404(TeamMembership, id=membership_id)
@@ -105,6 +106,23 @@ class TeamMembershipDetail(APIView):
         membership = get_object_or_404(TeamMembership, id=membership_id)
         self.check_object_permissions(self.request, membership)
         membership.delete()
+        return Response(status=204)
+
+class TeamMembershipStatus(APIView):
+    permission_classes = (permissions.IsAuthenticated, )
+
+    def put(self, request, team_id, format=None):
+        membership = get_object_or_404(TeamMembership, user=request.user, team=team_id)
+        self.check_object_permissions(self.request, membership)
+        membership.accept()
+        serializer = TeamMembershipSerializer(membership)
+        return Response(data=serializer.data)
+
+    def delete(self, request, team_id, format=None):
+        membership = get_object_or_404(TeamMembership, user=request.user, team=team_id)
+        self.check_object_permissions(self.request, membership)
+        membership.reject()
+        serializer = TeamMembershipSerializer(membership)
         return Response(status=204)
 
 @api_view(['GET'])

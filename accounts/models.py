@@ -7,6 +7,8 @@ from loco.models import BaseModel
 
 from .usermanager import UserManager, UserOtpManager
 
+from teams import constants as teams_constants
+
 class User(AbstractBaseUser, PermissionsMixin):
     name = models.CharField(max_length=80)
     email = models.EmailField(max_length=255, blank=True)
@@ -57,6 +59,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     def update_online(self, status):
         self.is_online = status
         self.save()
+
+    def get_memberships(self):
+        return self.teammembership_set.exclude(status=teams_constants.STATUS_ACCEPTED)
 
 
 class UserOtp(BaseModel):

@@ -62,7 +62,7 @@ def login_otp(otp, phone):
         token = Token.objects.create(user=user)
 
         data = UserSerializer(user).data
-        data['memberships'] = TeamMembershipSerializer(user.teammembership_set.all(), many=True).data
+        data['memberships'] = TeamMembershipSerializer(user.get_memberships(), many=True).data
         data['token'] = token.key
         return Response(data=data)
     else:
