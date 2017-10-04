@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from .models import Team, TeamMembership
 
+from accounts.serializers import UserSerializer
+
 class TeamSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -17,11 +19,13 @@ class TeamSerializer(serializers.ModelSerializer):
         return instance
 
 class TeamMembershipSerializer(serializers.ModelSerializer):
+    user = UserSerializer()
 
     class Meta:
         model = TeamMembership
         fields = '__all__'
         read_only_fields = ('created_by', 'created', 'updated', 'team')
+        depth = 1
 
     def create(self, validated_data):
         return Team.objects.create(**validated_data)

@@ -18,6 +18,8 @@ from loco import utils
 from .models import User, UserOtp, UserDump2
 from .serializers import UserSerializer, UserDumpSerializer
 
+from teams.serializers import TeamMembershipSerializer
+
 # from notifications.sms import generate_otp
 # from notifications.tasks import send_otp_task
 
@@ -59,6 +61,7 @@ def login_otp(otp, phone):
         token = Token.objects.create(user=user)
 
         data = UserSerializer(user).data
+        data['memberships'] = TeamMembershipSerializer(user.teammembership_set.all(), many=True).data
         data['token'] = token.key
         return Response(data=data)
     else:
