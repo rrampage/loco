@@ -30,7 +30,7 @@ class Team(BaseModel):
                 user = self.created_by,
                 created_by = self.created_by,
                 role = TeamMembership.ROLE_ADMIN,
-                status = TeamMembership.STATUS_ACCEPTED
+                status = constants.STATUS_ACCEPTED
             )
 
     def is_member(self, user):
@@ -47,7 +47,7 @@ class Team(BaseModel):
                 user = user,
                 created_by = created_by,
                 role = TeamMembership.ROLE_MEMBER,
-                status = TeamMembership.STATUS_INVITED
+                status = constants.STATUS_INVITED
             )
 
     def get_chat_members(self, user):
