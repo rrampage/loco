@@ -110,6 +110,8 @@ def checkin_media_path(instance, filename):
         instance.team.id, instance.user.id, instance.unique_id, filename)
 
 class CheckinMedia(BaseModel):
+    checkin = models.ForeignKey(
+        Checkin, null=True, on_delete=models.DO_NOTHING, related_name="media")
     media = models.FileField(upload_to=checkin_media_path)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
     team = models.ForeignKey(Team, on_delete=models.DO_NOTHING)

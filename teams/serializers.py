@@ -31,22 +31,21 @@ class TeamMembershipSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         return Team.objects.create(**validated_data)
 
+class CheckinMediaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CheckinMedia
+        exclude = ('team', 'user')
+        read_only_fields = ('created', 'updated', 'unique_id')
+
 class CheckinSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     team = TeamSerializer(read_only=True)
+    media = CheckinMediaSerializer(read_only=True, many=True)
 
     class Meta:
         model = Checkin
-        fields = '__all__'
-        read_only_fields = ('created', 'updated', 'team', 'user', 'unique_id')
-
-class CheckinMediaSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
-    team = TeamSerializer(read_only=True)
-
-    class Meta:
-        model = CheckinMedia
-        fields = '__all__'
+        fields = ('created', 'updated', 'team', 'user', 'description',
+         'latitude', 'longitude', 'media')
         read_only_fields = ('created', 'updated', 'team', 'user')
 
 class AttendanceSerializer(serializers.ModelSerializer):
@@ -58,12 +57,8 @@ class AttendanceSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ('team','user', 'created', 'updated')
 
-
 class UserMediaSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
-    team = TeamSerializer(read_only=True)
-
     class Meta:
         model = UserMedia
-        fields = '__all__'
-        read_only_fields = ('created', 'updated', 'team', 'user', 'unique_id')
+        exclude = ('team', 'user', 'checkin')
+        read_only_fields = ('created', 'updated', 'unique_id')

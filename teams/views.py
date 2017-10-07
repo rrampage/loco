@@ -9,7 +9,7 @@ from rest_framework.parsers import MultiPartParser
 from loco import utils
 
 from . import constants
-from .models import Team, TeamMembership, Checkin
+from .models import Team, TeamMembership, Checkin, CheckinMedia
 from .serializers import TeamSerializer, TeamMembershipSerializer, CheckinSerializer,\
  AttendanceSerializer, UserMediaSerializer, CheckinMediaSerializer
 from .permissions import IsTeamMember, IsAdminOrReadOnly, IsAdmin, IsMe
@@ -143,6 +143,12 @@ class CheckinList(APIView):
     permission_classes = (permissions.IsAuthenticated, IsTeamMember)
     #TODO permissions not complete
 
+    def add_media(self, checkin, media):
+        if media and isinstance(media, list):
+            uuids = [m.get('unique_id') for m in media if m.get('unique_id')]
+            media = CheckinMedia.objects.filter(unique_id__in=uuids)
+            checkin.media.add(*media)
+
     def get(self, request, team_id, format=None):
         team = get_object_or_404(Team, id=team_id)
         self.check_object_permissions(self.request, team)
@@ -157,6 +163,8 @@ class CheckinList(APIView):
 
         if serializer.is_valid():
             checkin = serializer.save(team=team, user=request.user)
+            media = request.data.get('media')
+            self.add_media(checkin, media)
             return Response(serializer.data)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -209,7 +217,7 @@ def checkin_media_upload(request, team_id):
 
     serializer = CheckinMediaSerializer(data=request.data)
     if serializer.is_valid():
-        serializer.save(user=request.user, team=team_id)
+        serializer.save(user=request.user, team=team)
         return Response(serializer.data)
     else:
         return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
