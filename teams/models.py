@@ -1,3 +1,5 @@
+import uuid
+
 from django.core.exceptions import ObjectDoesNotExist
 from django.conf import settings
 from django.db import models
@@ -10,7 +12,8 @@ from . import constants
 class Team(BaseModel):
     name = models.CharField(max_length=60)
     description = models.TextField(blank=True, null=True)
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='creator')
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, related_name='creator', on_delete=models.DO_NOTHING)
     members = models.ManyToManyField(
         settings.AUTH_USER_MODEL, 
         through='TeamMembership',
@@ -80,9 +83,10 @@ class TeamMembership(BaseModel):
         (constants.STATUS_REJECTED, 'rejected'),
     )
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    team = models.ForeignKey(Team, on_delete=models.CASCADE)
-    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="invites")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
+    team = models.ForeignKey(Team, on_delete=models.DO_NOTHING)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, related_name="invites", on_delete=models.DO_NOTHING)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default=ROLE_MEMBER)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=constants.STATUS_INVITED)
 
@@ -93,3 +97,46 @@ class TeamMembership(BaseModel):
     def reject(self):
         self.status = constants.STATUS_REJECTED
         self.save()
+
+class Checkin(BaseModel):
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
+    team = models.ForeignKey(Team, on_delete=models.DO_NOTHING)
+    description = models.TextField()
+
+def checkin_media_path(instance, filename):
+    return 'teams/{0}/users/{1}/checkins/{2}/{3}'.format(
+        instance.team.id, instance.user.id, instance.unique_id, filename)
+
+class CheckinMedia(BaseModel):
+    media = models.FileField(upload_to=checkin_media_path)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
+    team = models.ForeignKey(Team, on_delete=models.DO_NOTHING)
+    unique_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+
+
+class Attendance(BaseModel):
+    ACTION_SIGNIN = 'signin'
+    ACTION_SIGNOUT = 'signout'
+
+    ACTION_CHOICES = (
+        (ACTION_SIGNIN, 'signin'),
+        (ACTION_SIGNOUT, 'signout'),
+    )
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
+    team = models.ForeignKey(Team, on_delete=models.DO_NOTHING)
+    action = models.CharField(max_length=10, choices=ACTION_CHOICES)
+    latitude = models.FloatField()
+    longitude = models.FloatField()
+
+def user_media_path(instance, filename):
+    return 'teams/{0}/users/{1}/{2}/{3}'.format(
+        instance.team.id, instance.user.id, instance.unique_id, filename)
+
+class UserMedia(BaseModel):
+    media = models.FileField(upload_to=user_media_path)
+    team = models.ForeignKey(Team, on_delete=models.DO_NOTHING)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
+    unique_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)

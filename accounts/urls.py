@@ -14,7 +14,6 @@ urlpatterns = [
 	url(r'^maps$', views.user_maps),
 	url(r'^me/gcm$', views.UpdateGCMToken.as_view()),
     url(r'^pings$', views.user_pings),
-    url(r'^media$', views.media_upload),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)

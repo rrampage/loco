@@ -1,6 +1,5 @@
 from django.contrib.auth.models import BaseUserManager
 from django.utils import timezone
-from django.core.exceptions import ObjectDoesNotExist
 import uuid
 
 
@@ -46,7 +45,7 @@ class UserManager(BaseUserManager):
 
         try:
             return self.get(phone=phone)
-        except ObjectDoesNotExist:
+        except self.model.DoesNotExist:
             return self.create_user(phone=phone, name="InactiveUser", is_active=False)
 
 
@@ -56,13 +55,13 @@ class UserOtpManager(BaseUserManager):
         if not otp:
             return False
 
-        return  str(otp) == '1234'
+        return str(otp) == '1234'
 
         try:
             row = self.get(otp=otp, user__phone=phone)
             row.delete()
             return True
-        except ObjectDoesNotExist:
+        except self.model.DoesNotExist:
             return False
 
     def create_or_update(self, user, otp):
@@ -71,5 +70,5 @@ class UserOtpManager(BaseUserManager):
             row.otp = otp
             row.save()
             return row
-        except ObjectDoesNotExist:
+        except self.model.DoesNotExist:
             return self.create(user=user, otp=otp)

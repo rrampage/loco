@@ -7,17 +7,16 @@ from django.http import HttpResponse
 from django.template import RequestContext
 from django.shortcuts import render_to_response, redirect
 
-from rest_framework.decorators import api_view, permission_classes, parser_classes
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import permissions, status
 from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
-from rest_framework.parsers import MultiPartParser
 
 from loco import utils
 
 from .models import User, UserOtp, UserDump2
-from .serializers import UserSerializer, UserDumpSerializer, UserMediaSerializer
+from .serializers import UserSerializer, UserDumpSerializer
 
 from teams.serializers import TeamMembershipSerializer
 
@@ -259,15 +258,3 @@ def user_maps(request):
     data_url = BASE_URL + '?start={0}&limit={1}&name={2}'.format(start, limit, name)
     context = RequestContext(request, {'data_url': data_url})
     return render_to_response('maps.html', context)
-
-
-@api_view(['POST'])
-@permission_classes((permissions.IsAuthenticated, ))
-@parser_classes((MultiPartParser,))
-def media_upload(request):
-    serializer = UserMediaSerializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save(user=request.user)
-        return Response(serializer.data)
-    else:
-        return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, UserDump2, UserMedia
+from .models import User, UserDump2
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -13,10 +13,3 @@ class UserDumpSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserDump2
-
-
-class UserMediaSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = UserMedia
-        fields = ('media',)
