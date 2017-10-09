@@ -43,7 +43,8 @@ SYSTEM_APPS = [
 
 USER_APPS = [
     'accounts',
-    'teams'
+    'teams',
+    'morty'
 ]
 
 INSTALLED_APPS = SYSTEM_APPS + USER_APPS
