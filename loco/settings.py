@@ -93,7 +93,7 @@ if DEBUG:
 else:
     DATABASES = {
         'default': {
-            'ENGINE': 'djadjango.db.backends.mysql',
+            'ENGINE': 'django.db.backends.mysql',
             'NAME': 'loko',
             'USER': 'root',
             'PASSWORD': 'toor',
