@@ -29,6 +29,7 @@ def get_chats(request, team_id, user_id, format=None):
 def set_user_location(request, format=None):
     serializer = UserLocationSerializer(data=request.data)
     if serializer.is_valid():
+    	serializer.save()
         return Response()
 
     return Response(data=serializer.errors, status=400)
