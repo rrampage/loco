@@ -29,7 +29,7 @@ class Migration(migrations.Migration):
                 ('spoofed', models.BooleanField()),
                 ('battery', models.IntegerField()),
                 ('session', models.CharField(max_length=32)),
-                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL, related_name='locations')),
             ],
             options={
                 'abstract': False,

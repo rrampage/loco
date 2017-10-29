@@ -11,4 +11,4 @@ class UserLocation(BaseModel):
 	spoofed = models.BooleanField()
 	battery = models.IntegerField()
 	session = models.CharField(max_length=32)
-	user = models.ForeignKey(settings.AUTH_USER_MODEL)
+	user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="locations")
