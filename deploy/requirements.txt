@@ -3,3 +3,4 @@ djangorestframework==3.6.4
 Fabric==1.14.0
 gunicorn==19.7.1
 mysql-python
+requests==2.18.4
