@@ -69,5 +69,5 @@ class UserOtp(BaseModel):
 
     objects = UserOtpManager()
 
-class UserDump2(BaseModel):
+class UserDump(BaseModel):
     data = models.TextField(blank=True, null=True)

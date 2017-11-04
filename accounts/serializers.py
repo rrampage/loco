@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, UserDump2
+from .models import User, UserDump
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -12,4 +12,5 @@ class UserSerializer(serializers.ModelSerializer):
 class UserDumpSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = UserDump2
+        model = UserDump
+        fields = '__all__'

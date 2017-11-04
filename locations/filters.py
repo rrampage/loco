@@ -2,18 +2,18 @@ import utils
 
 NOISE_TIME = 10
 NOISE_DISTANCE = 0.1
-NOISE_SPEED = 175
+NOISE_SPEED = 200
 
 def is_time_noise(test_location, last_location):
-	return test_location.timestsamp - last_location.timestsamp < NOISE_TIME
+	return (test_location.timestamp - last_location.timestamp).total_seconds() < NOISE_TIME
 
 def is_distance_noise(test_location, last_location):
 	return utils.get_distance(test_location, last_location) < NOISE_DISTANCE
 
 def is_speed_noise(test_location, last_location):
 	distance =  utils.get_distance(test_location, last_location)
-	time = test_location.timestsamp - last_location.timestsamp
-	speed = (distance*60*60)/time
+	time = test_location.timestamp - last_location.timestamp
+	speed = (distance*60*60)/time.total_seconds()
 	return speed > NOISE_SPEED
 
 def is_noise(test_location, last_location):
