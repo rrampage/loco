@@ -29,6 +29,7 @@ urlpatterns += [
     url(r'^users/', include('accounts.urls')),
     url(r'^teams/', include('teams.urls')),
     url(r'^sapi/', include('morty.urls')),
+    url(r'^locations/', include('locations.urls')),
     url(r'^events', views.UserDumpView.as_view()),
 ]
 

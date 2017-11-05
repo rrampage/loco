@@ -6,16 +6,40 @@
        * element that contains the map. */
       #map {
         height: 100%;
+        width: 70%;
+        padding: 0;
+        display: inline-block;
+      }
+
+      #details {
+        height: 100%;
+        width: 29%;
+        display: inline-block;
+        padding: 0;
+        vertical-align: top;
+      }
+
+      #details li {
+        width: 100%;
+        padding: 16px;
       }
       /* Optional: Makes the sample page fill the window. */
       html, body {
         height: 100%;
+        width: 100%;
         margin: 0;
         padding: 0;
       }
     </style>
   </head>
   <body>
+    <ul id="details">
+        {% for  locations in snapped_locations_os_or %}
+        <li onclick="callMap({{ forloop.counter0 }})">
+            {{ forloop.counter0 }}
+        </li>
+        {% endfor %}
+    </ul>
     <div id="map"></div>
     <script>
       var map;
@@ -42,26 +66,36 @@
         // http://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojsonp
         script.src = '{{data_url}}';
         document.getElementsByTagName('head')[0].appendChild(script);
-        eqfeed_callback({{locations}}, {{len_locations}})
+        // eqfeed_callback({{locations}})
         // eqfeed_callback({{snapped_locations | safe}}, {{len_snapped_locations}}, true)
         // var snapped_locations_mp = {{snapped_locations_mp | safe}};
         var snapped_locations_os = {{snapped_locations_os | safe}};
+        console.log("snapped_locations_os", snapped_locations_os)
         // draw_path(snapped_locations, '#FF0000');
         // draw_path(snapped_locations_mp, '#00FF00');
         // draw_path(snapped_locations_os, '#0000FF');
+        var colors = ['#0000FF', '#FF0000', '#00FF00']
         for (var i = snapped_locations_os.length - 1; i >= 0; i--) {
-            draw_path(snapped_locations_os[i], getRandomColor())
+            draw_path(snapped_locations_os[i].matching, colors[i%3])
+            console.log('sample', snapped_locations_os[i])
+            eqfeed_callback(snapped_locations_os[i].original)
         }
         
       }
+
+      function callMap(index) {
+            draw_path(snapped_locations_os[index].matching, colors[index%3])
+            console.log('sample', snapped_locations_os[index])
+            eqfeed_callback(snapped_locations_os[index].original)
+      }
       // Loop through the results array and place a marker for each
       // set of coordinates.
-      window.eqfeed_callback = function(results, count, new_marker) {
+      window.eqfeed_callback = function(results, new_marker) {
         var bounds = new google.maps.LatLngBounds();
         var image = 'https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png';
 
-        for (var i = count; i >=0 ; i--) {
-            console.log(data);
+
+        for (var i = results.length; i >=0 ; i--) {
             var data = results[i];
             if (data) {
                 try{
@@ -77,7 +111,8 @@
                     } else {
                         var marker = new google.maps.Marker({
                           position: latLng,
-                          map: map
+                          map: map,
+                          label: i.toString()
                         });
                     }
                     bounds.extend(latLng)
@@ -90,10 +125,7 @@
       }
 
       window.draw_path = function(results, color) {
-        console.log("=======================")
-        console.log(results);
-        console.log(getRandomColor());
-        console.log("=======================")
+        console.log("results", results)
         var flightPath = new google.maps.Polyline({
                   path: results,
                   geodesic: true,

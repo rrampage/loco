@@ -6,13 +6,13 @@ from rest_framework import permissions, status
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser
 
-
 from .permissions import IsSuperUser
 
 from accounts.models import User
 from teams.models import Team
 from teams.serializers import TeamMembershipSerializer
 from locations.serializers import UserLocationSerializer
+from events.serializers import UserAttendanceSerializer
 
 
 @api_view(['GET'])
@@ -24,12 +24,23 @@ def get_chats(request, team_id, user_id, format=None):
     serializer = TeamMembershipSerializer(chat_members, many=True)
     return Response(serializer.data)
 
-@api_view(['POSt'])
+@api_view(['POST'])
 @permission_classes((permissions.IsAuthenticated, IsSuperUser))
 def set_user_location(request, format=None):
     serializer = UserLocationSerializer(data=request.data)
     if serializer.is_valid():
-    	serializer.save()
+        serializer.save()
+        return Response()
+
+    return Response(data=serializer.errors, status=400)
+
+@api_view(['POST'])
+@permission_classes((permissions.IsAuthenticated, IsSuperUser))
+def set_user_attendance(request, format=None):
+    user = get_object_or_404(User, id=request.data.get('user', {}).get('id'))
+    serializer = UserAttendanceSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save(user=user)
         return Response()
 
     return Response(data=serializer.errors, status=400)
