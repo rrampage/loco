@@ -62,3 +62,23 @@ class UserMediaSerializer(serializers.ModelSerializer):
         model = UserMedia
         exclude = ('team', 'user', 'checkin')
         read_only_fields = ('created', 'updated', 'unique_id')
+
+
+TYPE_CHECKIN = 'checkin'
+TYPE_ATTENDANCE = 'attendance'
+
+def serialize_events(events):
+    results = []
+    for event in events:
+        if isinstance(event, Checkin):
+            data = CheckinSerializer(event).data
+            data['type'] = TYPE_CHECKIN
+        elif isinstance(event, Attendance):
+            data = AttendanceSerializer(event).data
+            data['type'] = TYPE_ATTENDANCE
+        else:
+            continue
+
+        results.append(data)
+
+    return results

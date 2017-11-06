@@ -11,7 +11,7 @@ from loco import utils
 from . import constants
 from .models import Team, TeamMembership, Checkin, CheckinMedia
 from .serializers import TeamSerializer, TeamMembershipSerializer, CheckinSerializer,\
- AttendanceSerializer, UserMediaSerializer, CheckinMediaSerializer
+    UserMediaSerializer, CheckinMediaSerializer, serialize_events
 from .permissions import IsTeamMember, IsAdminOrReadOnly, IsAdmin, IsMe
 
 from accounts.models import User
@@ -169,7 +169,6 @@ class CheckinList(APIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
 class CheckinDetail(APIView):
     permission_classes = (permissions.IsAuthenticated, IsAdmin, IsMe)
 
@@ -222,38 +221,29 @@ def checkin_media_upload(request, team_id):
     else:
         return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class AttendanceList(APIView):
+class EventList(APIView):
     permission_classes = (permissions.IsAuthenticated, IsTeamMember)
 
     def get(self, request, team_id, format=None):
         team = get_object_or_404(Team, id=team_id)
         self.check_object_permissions(self.request, team)
-        attendance = request.user.attendance_set.all()
-        serializer = AttendanceSerializer(attendance, many=True)
-        return Response(serializer.data)
-
-    def post(self, request, team_id, format=None):
-        team = get_object_or_404(Team, id=team_id)
-        self.check_object_permissions(self.request, team)
-        serializer = AttendanceSerializer(data=request.data)
-
-        if serializer.is_valid():
-            attendance = serializer.save(team=team, user=request.user)
-            return Response(serializer.data)
-
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        date = utils.get_query_date(request)
+        events = team.get_visible_events(request.user, date)
+        data = serialize_events(events)
+        return Response(data)
 
 @api_view(['GET'])
 @permission_classes((permissions.IsAuthenticated,))
-def get_user_attendance(request, team_id, user_id, format=None):
+def get_user_events(request, team_id, user_id, format=None):
     team = get_object_or_404(Team, id=team_id)
     if not team.is_admin(request.user):
         return Response(status=403)
 
     user = team.members.get(id=user_id)
-    attendance = user.attendance_set.all()
-    serializer = AttendanceSerializer(attendance, many=True)
-    return Response(serializer.data)
+    data = utils.get_query_date(request)
+    events = team.get_visible_events(user, date)
+    data = serialize_events(events)
+    return Response(data)
 
 @api_view(['POST'])
 @permission_classes((permissions.IsAuthenticated, ))

@@ -12,7 +12,7 @@ from accounts.models import User
 from teams.models import Team
 from teams.serializers import TeamMembershipSerializer
 from locations.serializers import UserLocationSerializer
-from events.serializers import UserAttendanceSerializer
+from teams.serializers import AttendanceSerializer
 
 
 @api_view(['GET'])
@@ -20,7 +20,7 @@ from events.serializers import UserAttendanceSerializer
 def get_chats(request, team_id, user_id, format=None):
     team = get_object_or_404(Team, id=team_id)
     user = get_object_or_404(User, id=user_id)
-    chat_members = team.get_chat_members(user)
+    chat_members = team.get_chat_targets(user)
     serializer = TeamMembershipSerializer(chat_members, many=True)
     return Response(serializer.data)
 
@@ -38,7 +38,7 @@ def set_user_location(request, format=None):
 @permission_classes((permissions.IsAuthenticated, IsSuperUser))
 def set_user_attendance(request, format=None):
     user = get_object_or_404(User, id=request.data.get('user', {}).get('id'))
-    serializer = UserAttendanceSerializer(data=request.data)
+    serializer = AttendanceSerializer(data=request.data)
     if serializer.is_valid():
         serializer.save(user=user)
         return Response()

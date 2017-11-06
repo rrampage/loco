@@ -1,3 +1,5 @@
+import datetime, dateutil
+
 def is_int(s):
     if s is None:
         return False
@@ -27,3 +29,14 @@ def validate_phone(phone):
         return False
 
     return True
+
+def get_query_date(request):
+        PARAM_DATE = 'date'
+        date = request.data.get(PARAM_DATE)
+
+        try:
+            date = dateutil.parser.parse(date).date()
+        except:
+            date = datetime.date.today()
+
+        return date

@@ -4,7 +4,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.conf import settings
 from django.db import models
 
-from loco.models import BaseModel
+from loco.models import BaseModel, BaseLocationModel
 
 from . import constants
 
@@ -65,6 +65,41 @@ class Team(BaseModel):
 
         return []
 
+    def get_chat_targets(self, user):
+        try:
+            membership = TeamMembership.objects.get(user=user, team=self)
+            if membership.role == TeamMembership.ROLE_ADMIN:
+                return TeamMembership.objects.filter(team=self, role=ROLE_ADMIN).exclude(user=user)
+            elif membership.role == TeamMembership.ROLE_MEMBER:
+                return TeamMembership.objects.filter(team=self, role=TeamMembership.ROLE_ADMIN)
+        except ObjectDoesNotExist:
+            pass
+
+        return []
+
+    def _sort_events(self, events):
+        events.sort(key=lambda e: e.timestamp)
+        return events
+
+    def get_visible_events(self, user, date):
+        try:
+            membership = TeamMembership.objects.get(user=user, team=self)
+            if membership.role == TeamMembership.ROLE_ADMIN:
+                attendance = self.attendance_set.filter(timestamp__date=date)
+                checkins = self.checkin_set.filter(timestamp__date=date)
+            elif membership.role == TeamMembership.ROLE_MEMBER:
+                attendance = user.attendance_set.filter(timestamp__date=date)
+                checkins = user.checkin_set.filter(timestamp__date=date)
+
+
+            events = list(attendance) + list(checkins)
+            return self._sort_events(events)
+
+        except ObjectDoesNotExist:
+            pass
+
+        return []
+
 
 class TeamMembership(BaseModel):
     ROLE_MEMBER = 'member'
@@ -98,10 +133,7 @@ class TeamMembership(BaseModel):
         self.status = constants.STATUS_REJECTED
         self.save()
 
-class Checkin(BaseModel):
-    latitude = models.FloatField()
-    longitude = models.FloatField()
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
+class Checkin(BaseLocationModel):
     team = models.ForeignKey(Team, on_delete=models.DO_NOTHING)
     description = models.TextField()
 
@@ -117,8 +149,7 @@ class CheckinMedia(BaseModel):
     team = models.ForeignKey(Team, on_delete=models.DO_NOTHING)
     unique_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
 
-
-class Attendance(BaseModel):
+class Attendance(BaseLocationModel):
     ACTION_SIGNIN = 'signin'
     ACTION_SIGNOUT = 'signout'
 
@@ -127,11 +158,8 @@ class Attendance(BaseModel):
         (ACTION_SIGNOUT, 'signout'),
     )
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
     team = models.ForeignKey(Team, on_delete=models.DO_NOTHING)
-    action = models.CharField(max_length=10, choices=ACTION_CHOICES)
-    latitude = models.FloatField()
-    longitude = models.FloatField()
+    action_type = models.CharField(max_length=10, choices=ACTION_CHOICES)
 
 def user_media_path(instance, filename):
     return 'teams/{0}/users/{1}/{2}/{3}'.format(
