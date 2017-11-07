@@ -44,7 +44,7 @@ class CheckinSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Checkin
-        fields = ('latitude', 'longitude', 'timestamp', 'accuracy', 
+        fields = ('latitude', 'longitude', 'timestamp', 'accuracy', 'created', 'updated',
             'spoofed', 'battery', 'session', 'user', 'media', 'team', 'description')
         read_only_fields = ('created', 'updated')
 
