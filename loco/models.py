@@ -15,7 +15,7 @@ class BaseLocationModel(BaseModel):
 	accuracy = models.FloatField()
 	spoofed = models.BooleanField()
 	battery = models.IntegerField()
-	session = models.CharField(max_length=32)
+	session = models.CharField(max_length=32, blank=True, null=True)
 	user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
 
 	class Meta:
