@@ -55,8 +55,6 @@ class UserOtpManager(BaseUserManager):
         if not otp:
             return False
 
-        return str(otp) == '1234'
-
         try:
             row = self.get(otp=otp, user__phone=phone)
             row.delete()

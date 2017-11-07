@@ -15,9 +15,7 @@ from .models import User, UserOtp, UserDump
 from .serializers import UserSerializer, UserDumpSerializer
 
 from teams.serializers import TeamMembershipSerializer
-
-# from notifications.sms import generate_otp
-# from notifications.tasks import send_otp_task
+from notifications.sms import generate_otp, send_otp
 
 
 @api_view(['POST'])
@@ -28,9 +26,9 @@ def getOtp(request, format=None):
     if not utils.validate_phone(phone):
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
-    # otp = generate_otp()
-    otp = '1234'
-    # send_otp_task.delay(phone, otp)
+    otp = generate_otp()
+    # otp = '1234'
+    send_otp(phone, otp)
     user = User.objects.get_or_create_dummy(phone)
 
     UserOtp.objects.create_or_update(user = user, otp=otp)
