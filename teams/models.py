@@ -69,7 +69,7 @@ class Team(BaseModel):
         try:
             membership = TeamMembership.objects.get(user=user, team=self)
             if membership.role == TeamMembership.ROLE_ADMIN:
-                return TeamMembership.objects.filter(team=self, role=ROLE_ADMIN).exclude(user=user)
+                return TeamMembership.objects.filter(team=self, role=TeamMembership.ROLE_ADMIN).exclude(user=user)
             elif membership.role == TeamMembership.ROLE_MEMBER:
                 return TeamMembership.objects.filter(team=self, role=TeamMembership.ROLE_ADMIN)
         except ObjectDoesNotExist:
