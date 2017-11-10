@@ -39,7 +39,7 @@ def set_user_location(request, format=None):
 def set_user_attendance(request, format=None):
     serializer = AttendanceSerializer(data=request.data)
     if serializer.is_valid():
-        serializer.save(user=user)
+        serializer.save()
         return Response()
 
     return Response(data=serializer.errors, status=400)
