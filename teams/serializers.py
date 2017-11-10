@@ -49,13 +49,12 @@ class CheckinSerializer(serializers.ModelSerializer):
         read_only_fields = ('created', 'updated')
 
 class AttendanceSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
-    team = TeamSerializer(read_only=True)
+    # team = TeamSerializer(read_only=True)
 
     class Meta:
         model = Attendance
         fields = "__all__"
-        read_only_fields = ('team','user', 'created', 'updated')
+        read_only_fields = ('created', 'updated')
 
 class UserMediaSerializer(serializers.ModelSerializer):
     class Meta:

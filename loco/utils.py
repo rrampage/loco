@@ -1,4 +1,5 @@
-import datetime, dateutil
+import datetime
+from dateutil.parser import parse
 
 def is_int(s):
     if s is None:
@@ -31,12 +32,17 @@ def validate_phone(phone):
     return True
 
 def get_query_date(request):
-        PARAM_DATE = 'date'
-        date = request.data.get(PARAM_DATE)
+    PARAM_DATE = 'date'
+    date = request.query_params.get(PARAM_DATE)
 
-        try:
-            date = dateutil.parser.parse(date).date()
-        except:
-            date = datetime.date.today()
+    try:
+        return parse(date).date()
+    except:
+        pass
 
-        return date
+def get_query_start_limit(request):
+    PARAM_START = 'start'
+    PARAM_LIMIT = 'limit'
+    start = request.query_params.get(PARAM_START, 0)
+    limit = request.query_params.get(PARAM_LIMIT, 10)
+    return (int(start), int(limit))

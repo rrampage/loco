@@ -37,7 +37,6 @@ def set_user_location(request, format=None):
 @api_view(['POST'])
 @permission_classes((permissions.IsAuthenticated, IsSuperUser))
 def set_user_attendance(request, format=None):
-    user = get_object_or_404(User, id=request.data.get('user', {}).get('id'))
     serializer = AttendanceSerializer(data=request.data)
     if serializer.is_valid():
         serializer.save(user=user)

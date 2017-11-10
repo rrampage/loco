@@ -73,10 +73,8 @@ class TeamMembershipList(APIView):
         self.check_object_permissions(self.request, team)
 
         phone = request.data.get('phone')
-        print ("This failed", phone)
 
         if not utils.validate_phone(phone):
-            print ("This failed", phone)
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         user = User.objects.get_or_create_dummy(phone)
@@ -228,7 +226,12 @@ class EventList(APIView):
         team = get_object_or_404(Team, id=team_id)
         self.check_object_permissions(self.request, team)
         date = utils.get_query_date(request)
-        events = team.get_visible_events(request.user, date)
+        if date:
+            events = team.get_visible_events_by_date(request.user, date)
+        else:
+            start, limit = utils.get_query_start_limit(request)
+            events = team.get_visible_events_by_page(request.user, start, limit)
+
         data = serialize_events(events)
         return Response(data)
 

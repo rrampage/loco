@@ -81,7 +81,7 @@ class Team(BaseModel):
         events.sort(key=lambda e: e.timestamp)
         return events
 
-    def get_visible_events(self, user, date):
+    def get_visible_events_by_date(self, user, date):
         try:
             membership = TeamMembership.objects.get(user=user, team=self)
             if membership.role == TeamMembership.ROLE_ADMIN:
@@ -94,6 +94,26 @@ class Team(BaseModel):
 
             events = list(attendance) + list(checkins)
             return self._sort_events(events)
+
+        except ObjectDoesNotExist:
+            pass
+
+        return []
+
+    def get_visible_events_by_page(self, user, start, limit):
+        try:
+            membership = TeamMembership.objects.get(user=user, team=self)
+            if membership.role == TeamMembership.ROLE_ADMIN:
+                attendance = self.attendance_set.all()[0:start+limit]
+                checkins = self.checkin_set.all()[0:start+limit]
+            elif membership.role == TeamMembership.ROLE_MEMBER:
+                attendance = user.attendance_set.all()[0:start+limit]
+                checkins = user.checkin_set.all()[0:start+limit]
+
+
+            events = list(attendance) + list(checkins)
+            events = self._sort_events(events)
+            return events[start:limit]
 
         except ObjectDoesNotExist:
             pass
