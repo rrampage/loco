@@ -78,7 +78,7 @@ class Team(BaseModel):
         return []
 
     def _sort_events(self, events):
-        events.sort(key=lambda e: e.timestamp)
+        events.sort(key=lambda e: e.timestamp, reverse=True)
         return events
 
     def get_visible_events_by_date(self, user, date):
@@ -104,11 +104,11 @@ class Team(BaseModel):
         try:
             membership = TeamMembership.objects.get(user=user, team=self)
             if membership.role == TeamMembership.ROLE_ADMIN:
-                attendance = self.attendance_set.all()[0:start+limit]
-                checkins = self.checkin_set.all()[0:start+limit]
+                attendance = self.attendance_set.all().order_by('-timestamp')[0:start+limit]
+                checkins = self.checkin_set.all().order_by('-timestamp')[0:start+limit]
             elif membership.role == TeamMembership.ROLE_MEMBER:
-                attendance = user.attendance_set.all()[0:start+limit]
-                checkins = user.checkin_set.all()[0:start+limit]
+                attendance = user.attendance_set.all().order_by('-timestamp')[0:start+limit]
+                checkins = user.checkin_set.all().order_by('-timestamp')[0:start+limit]
 
 
             events = list(attendance) + list(checkins)

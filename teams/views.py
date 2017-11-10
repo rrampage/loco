@@ -243,8 +243,13 @@ def get_user_events(request, team_id, user_id, format=None):
         return Response(status=403)
 
     user = team.members.get(id=user_id)
-    data = utils.get_query_date(request)
-    events = team.get_visible_events(user, date)
+    date = utils.get_query_date(request)
+    if date:
+        events = team.get_visible_events_by_date(user, date)
+    else:
+        start, limit = utils.get_query_start_limit(request)
+        events = team.get_visible_events_by_page(user, start, limit)
+
     data = serialize_events(events)
     return Response(data)
 
