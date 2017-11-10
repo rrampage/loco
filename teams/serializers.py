@@ -49,7 +49,8 @@ class CheckinSerializer(serializers.ModelSerializer):
         read_only_fields = ('created', 'updated')
 
 class AttendanceSerializer(serializers.ModelSerializer):
-    # team = TeamSerializer(read_only=True)
+    user = UserSerializer(read_only=True)
+    team = TeamSerializer(read_only=True)
 
     class Meta:
         model = Attendance

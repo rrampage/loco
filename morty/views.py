@@ -7,12 +7,12 @@ from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser
 
 from .permissions import IsSuperUser
+from .serializers import AttendanceSerializer
 
 from accounts.models import User
 from teams.models import Team
 from teams.serializers import TeamMembershipSerializer
 from locations.serializers import UserLocationSerializer
-from teams.serializers import AttendanceSerializer
 
 
 @api_view(['GET'])
