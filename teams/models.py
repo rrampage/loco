@@ -113,7 +113,7 @@ class Team(BaseModel):
 
             events = list(attendance) + list(checkins)
             events = self._sort_events(events)
-            return events[start:limit]
+            return events[start:start+limit]
 
         except ObjectDoesNotExist:
             pass
