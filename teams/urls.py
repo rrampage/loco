@@ -2,6 +2,7 @@ from django.conf.urls import url, include
 from rest_framework.urlpatterns import format_suffix_patterns
 
 from . import views
+from locations.views import LocationSubscriptionList
 
 
 urlpatterns = [
@@ -17,6 +18,7 @@ urlpatterns = [
 	url(r'^[0-9]+/members/(?P<membership_id>[0-9]+)/$', views.TeamMembershipDetail.as_view()),
     url(r'^(?P<team_id>[0-9]+)/media$', views.user_media_upload),
     url(r'^(?P<team_id>[0-9]+)/media/checkins$', views.checkin_media_upload),
+	url(r'^(?P<team_id>[0-9]+)/subscriptions/$', LocationSubscriptionList.as_view()),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)

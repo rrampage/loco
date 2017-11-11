@@ -1,9 +1,21 @@
 import json, requests, polyline
 
+from django.shortcuts import get_object_or_404
 from django.shortcuts import render_to_response
 
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+from rest_framework import permissions, status
+from rest_framework.views import APIView
+
 from .filters import is_noise
-from .models import UserLocation
+from .models import UserLocation, get_users_location
+from .serializers import UserLocationSerializer
+
+from accounts.models import User
+from teams.models import Team
+from teams.permissions import IsTeamMember, IsAdminOrReadOnly
+from morty.services import subscribe_location, unsubscribe_location
 
 def get_snapped_mp(locations, loc_type):
     if loc_type == 'mp':
@@ -73,3 +85,25 @@ def new_user_maps(request):
         'len_locations': len_locations, 
     }
     return render_to_response('maps.html', context)
+
+
+class LocationSubscriptionList(APIView):
+    permission_classes = (permissions.IsAuthenticated, IsTeamMember, IsAdminOrReadOnly)
+
+    def put(self, request, team_id, format=None):
+        team = get_object_or_404(Team, id=team_id)
+        self.check_object_permissions(self.request, team)
+        user_ids = request.data.get('user_ids', [])
+        users = team.members.filter(id__in=user_ids)
+        subscribe_location(request.user, users)
+        locations = get_users_location(users)
+        serializer = UserLocationSerializer(locations, many=True)
+        return Response(serializer.data)
+
+    def delete(self, request, team_id, format=None):
+        team = get_object_or_404(Team, id=team_id)
+        self.check_object_permissions(self.request, team)
+        user_ids = request.data.get('user_ids', [])
+        users = team.members.filter(id__in=user_ids)
+        unsubscribe_location(request.user, users)
+        return Response()
