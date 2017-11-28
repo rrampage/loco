@@ -61,6 +61,10 @@ def login_otp(otp, phone):
     else:
         return Response(data={"error": "Invalid OTP"}, status=status.HTTP_401_UNAUTHORIZED)
 
+@api_view(['GET'])
+@permission_classes((permissions.IsAuthenticated,))
+def validate_authentication(request, format=None):
+    return Response()
 
 @api_view(['GET'])
 @permission_classes((permissions.IsAuthenticated, ))

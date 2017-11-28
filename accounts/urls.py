@@ -8,6 +8,7 @@ urlpatterns = [
 	url(r'^getOtp$', views.getOtp),
 	url(r'^login', views.login_user),
 	url(r'^logout', views.logout_user),
+	url(r'^authenticate', views.validate_authentication),
 	url(r'^me$', views.UserMeDetail.as_view()),
 	url(r'^me/gcm$', views.UpdateGCMToken.as_view()),
 ]
