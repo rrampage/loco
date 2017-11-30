@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Team, TeamMembership, Checkin, CheckinMedia, Attendance, UserMedia
+from .models import Team, TeamMembership, Checkin, CheckinMedia, Attendance, UserMedia, Message
 
 from accounts.serializers import UserSerializer
 
@@ -82,3 +82,12 @@ def serialize_events(events):
         results.append(data)
 
     return results
+
+class MessageSerializer(serializers.ModelSerializer):
+    # user = UserSerializer(read_only=True)
+    # team = TeamSerializer(read_only=True)
+
+    class Meta:
+        model = Message
+        fields = "__all__"
+        read_only_fields = ('created', 'updated')

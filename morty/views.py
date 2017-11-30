@@ -6,12 +6,13 @@ from rest_framework import permissions, status
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser
 
+from .parsers import XmlParser
 from .permissions import IsSuperUser
-from .serializers import AttendanceSerializer, UserLocationSerializer
+from .serializers import AttendanceSerializer, UserLocationSerializer, parse_message
 
 from accounts.models import User
-from teams.models import Team
-from teams.serializers import TeamMembershipSerializer
+from teams.models import Team, Message
+from teams.serializers import TeamMembershipSerializer, MessageSerializer
 
 
 @api_view(['GET'])
@@ -37,6 +38,38 @@ def set_user_location(request, format=None):
 @permission_classes((permissions.IsAuthenticated, IsSuperUser))
 def set_user_attendance(request, format=None):
     serializer = AttendanceSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response()
+
+    return Response(data=serializer.errors, status=400)
+        
+
+@api_view(['POST'])
+@parser_classes((XmlParser,))
+@permission_classes((permissions.IsAuthenticated, IsSuperUser))
+def add_or_update_message(request, format=None):
+    message_data, error = parse_message(request.data)
+    if not message_data:
+        return Response(data=error, status=400)
+
+    message = Message.objects.filter(id=message_data.get('id'))
+    if message:
+        serializer = MessageSerializer(message, message_data)
+    else:
+        serializer = MessageSerializer(data=message_data)
+
+    if serializer.is_valid():
+        serializer.save()
+        return Response()
+
+    return Response(data=serializer.errors, status=400)
+
+@api_view(['POST'])
+@permission_classes((permissions.IsAuthenticated, IsSuperUser))
+def update_message(request, id, format=None):
+    message = get_object_or_404(Message, id=id)
+    serializer = MessageSerializer(message, data=request.data)
     if serializer.is_valid():
         serializer.save()
         return Response()

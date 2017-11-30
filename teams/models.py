@@ -190,3 +190,22 @@ class UserMedia(BaseModel):
     team = models.ForeignKey(Team, on_delete=models.DO_NOTHING)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.DO_NOTHING)
     unique_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+
+class Message(BaseModel):
+    STATUS_SENT = 'sent'
+    STATUS_DELIVERED = 'delivered'
+    STATUS_READ = 'read'
+
+    STATUS_CHOICES = (
+        (STATUS_SENT, 'sent'),
+        (STATUS_DELIVERED, 'delivered'),
+        (STATUS_READ, 'read'),
+    )
+
+    id = models.CharField(max_length=16, primary_key=True, editable=False)
+    team = models.ForeignKey(Team, on_delete=models.DO_NOTHING)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES)
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="sent_messages")
+    target = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="recv_messages")
+    body = models.TextField()
+    original = models.TextField()
