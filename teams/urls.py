@@ -19,6 +19,7 @@ urlpatterns = [
     url(r'^(?P<team_id>[0-9]+)/media$', views.user_media_upload),
     url(r'^(?P<team_id>[0-9]+)/media/checkins$', views.checkin_media_upload),
 	url(r'^(?P<team_id>[0-9]+)/subscriptions/$', LocationSubscriptionList.as_view()),
+	url(r'^(?P<team_id>[0-9]+)/threads/(?P<thread_id>.+)$', views.MessagesList.as_view()),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)

@@ -1,3 +1,4 @@
+from datetime import datetime
 from django.shortcuts import get_object_or_404
 
 from rest_framework.decorators import api_view, permission_classes, parser_classes
@@ -9,9 +10,9 @@ from rest_framework.parsers import MultiPartParser
 from loco import utils
 
 from . import constants
-from .models import Team, TeamMembership, Checkin, CheckinMedia
+from .models import Team, TeamMembership, Checkin, CheckinMedia, Message
 from .serializers import TeamSerializer, TeamMembershipSerializer, CheckinSerializer,\
-    UserMediaSerializer, CheckinMediaSerializer, serialize_events
+    UserMediaSerializer, CheckinMediaSerializer, serialize_events, MessageSerializer
 from .permissions import IsTeamMember, IsAdminOrReadOnly, IsAdmin, IsMe
 
 from accounts.models import User
@@ -267,3 +268,20 @@ def user_media_upload(request, team_id):
         return Response(serializer.data)
     else:
         return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class MessagesList(APIView):
+    permission_classes = (permissions.IsAuthenticated, IsTeamMember)
+
+    def get(self, request, team_id, thread_id, format=None):
+        PARAM_START = 'start'
+        PARAM_LIMIT = 'limit'
+        start = request.query_params.get(PARAM_START)
+        start = start or datetime.now()
+        limit = request.query_params.get(PARAM_LIMIT, 10)
+
+        team = get_object_or_404(Team, id=team_id)
+        self.check_object_permissions(self.request, team)
+        messages = Message.objects.filter(
+            thread=thread_id, created__lt=start).order_by('-created')[:10]
+        serializer = MessageSerializer(messages, many=True)
+        return Response(data=serializer.data)
