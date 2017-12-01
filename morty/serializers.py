@@ -20,9 +20,6 @@ class UserLocationSerializer(serializers.ModelSerializer):
         read_only_fields = ('created', 'updated')
 
 def parse_message(data):
-	print ("=========")
-	print (data)
-	print ("=========")
 	result = {}
 	message = data.get('message')
 	if not message:
@@ -45,10 +42,8 @@ def parse_message(data):
 	result['status'] = status
 	result['sender'] = message.get('@to').replace('@localhost', '')
 	result['target'] = message.get('@from').replace('@localhost/Rooster', '')
-	result['team'] = message.get('team', u'1')
+	result['team'] = message.get('team', {}).get('@id')
 	result['body'] = message.get('body')
+	result['thread'] = message.get('thread')
 	result['original'] = data.get('original')
-	print ("=========")
-	print (result)
-	print ("=========")
 	return (result, None)

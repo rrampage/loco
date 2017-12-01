@@ -84,8 +84,7 @@ def serialize_events(events):
     return results
 
 class MessageSerializer(serializers.ModelSerializer):
-    # user = UserSerializer(read_only=True)
-    # team = TeamSerializer(read_only=True)
+    id = serializers.CharField(max_length=16)
 
     class Meta:
         model = Message

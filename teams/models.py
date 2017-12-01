@@ -203,9 +203,16 @@ class Message(BaseModel):
     )
 
     id = models.CharField(max_length=16, primary_key=True, editable=False)
+    thread = models.CharField(max_length=32, editable=False)
     team = models.ForeignKey(Team, on_delete=models.DO_NOTHING)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES)
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="sent_messages")
     target = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="recv_messages")
     body = models.TextField()
     original = models.TextField()
+
+    def validate_next_status(self, status):
+        if self.status == self.STATUS_SENT and status != self.STATUS_SENT:
+            return status
+        elif self.status == self.STATUS_DELIVERED and status == self.STATUS_READ:
+            return status

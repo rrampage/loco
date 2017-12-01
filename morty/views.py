@@ -4,7 +4,7 @@ from rest_framework.decorators import api_view, permission_classes, parser_class
 from rest_framework.response import Response
 from rest_framework import permissions, status
 from rest_framework.views import APIView
-from rest_framework.parsers import MultiPartParser
+from rest_framework.parsers import JSONParser
 
 from .parsers import XmlParser
 from .permissions import IsSuperUser
@@ -43,35 +43,42 @@ def set_user_attendance(request, format=None):
         return Response()
 
     return Response(data=serializer.errors, status=400)
-        
 
-@api_view(['POST'])
-@parser_classes((XmlParser,))
-@permission_classes((permissions.IsAuthenticated, IsSuperUser))
-def add_or_update_message(request, format=None):
-    message_data, error = parse_message(request.data)
-    if not message_data:
-        return Response(data=error, status=400)
+class MessageList(APIView):
+    permission_classes = (permissions.IsAuthenticated, IsSuperUser)
+    parser_classes = (JSONParser, XmlParser)
 
-    message = Message.objects.filter(id=message_data.get('id'))
-    if message:
-        serializer = MessageSerializer(message, message_data)
-    else:
-        serializer = MessageSerializer(data=message_data)
+    def get(self, request, format=None):
+        PARAM_TARGET = 'target'
+        PARAM_TEAM = 'team'
+        PARAM_STATUS = 'status'
 
-    if serializer.is_valid():
-        serializer.save()
-        return Response()
+        target = request.query_params.get(PARAM_TARGET)
+        team = request.query_params.get(PARAM_TEAM)
+        status = request.query_params.get(PARAM_STATUS)
 
-    return Response(data=serializer.errors, status=400)
+        messages = Message.objects.filter(
+            target=target, team=team, status=status).order_by('-created')
+        serializer = MessageSerializer(messages, many=True)
+        return Response(serializer.data)
 
-@api_view(['POST'])
-@permission_classes((permissions.IsAuthenticated, IsSuperUser))
-def update_message(request, id, format=None):
-    message = get_object_or_404(Message, id=id)
-    serializer = MessageSerializer(message, data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response()
+    def post(self, request, format=None):
+        message_data, error = parse_message(request.data)
+        if not message_data:
+            return Response(data=error, status=400)
 
-    return Response(data=serializer.errors, status=400)
+        message = Message.objects.filter(id=message_data.get('id'))
+        if message:
+            message = message[0]
+            if not message.validate_next_status(message_data.get('status')):
+                return Response()
+
+            serializer = MessageSerializer(message, message_data)
+        else:
+            serializer = MessageSerializer(data=message_data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(status=201)
+
+        return Response(data=serializer.errors, status=400)   
