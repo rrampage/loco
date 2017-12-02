@@ -49,14 +49,14 @@ def get_user_status(user_id):
 	key = KEY_STATUS + str(user_id)
 	status = cache.hgetall(key)
 	last_ping = get_user_ping([user_id])
-	if not status.get(KEY_STATUS_SIGNIN) or not last_ping:
+	if not status.get(KEY_STATUS_SIGNIN) == 'True' or not last_ping:
 		return USER_STATUS_SIGNEDOUT
 	else:
 		last_ping_time = parse(last_ping.get('timestamp'))
 		if timezone.now() - last_ping_time > timedelta(minutes=10):
 			return USER_STATUS_UNREACHABLE
 
-		if not status.get(KEY_STATUS_LOCATION):
+		if not status.get(KEY_STATUS_LOCATION) == 'True':
 			return USER_STATUS_LOCATIONOFF
 
 	return USER_STATUS_SIGNEDIN
