@@ -40,7 +40,11 @@ def get_user_ping(user_id):
 		return 
 
 	key = KEY_PING+str(user_id)
-	return cache.get(key)
+	ping = cache.get(key)
+	if ping:
+		return pickle.loads(cache.get(key))
+		
+	return {}
 
 def get_user_status(user_id):
 	if not user_id:
