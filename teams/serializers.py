@@ -2,6 +2,8 @@ from rest_framework import serializers
 from .models import Team, TeamMembership, Checkin, CheckinMedia, Attendance, UserMedia, Message
 
 from accounts.serializers import UserSerializer
+from locations.models import PhoneStatus, LocationStatus
+from locations.serializers import PhoneStatusSerializer, LocationStatusSerializer
 
 class TeamSerializer(serializers.ModelSerializer):
 
@@ -66,6 +68,8 @@ class UserMediaSerializer(serializers.ModelSerializer):
 
 TYPE_CHECKIN = 'checkin'
 TYPE_ATTENDANCE = 'attendance'
+TYPE_LOCATION_STATUS = 'location_status'
+TYPE_PHONE_STATUS = 'phone_status'
 
 def serialize_events(events):
     results = []
@@ -76,6 +80,12 @@ def serialize_events(events):
         elif isinstance(event, Attendance):
             data = AttendanceSerializer(event).data
             data['type'] = TYPE_ATTENDANCE
+        elif isinstance(event, LocationStatus):
+            data = LocationStatusSerializer(event).data
+            data['type'] = TYPE_LOCATION_STATUS
+        elif isinstance(event, PhoneStatus):
+            data = PhoneStatusSerializer(event).data
+            data['type'] = TYPE_PHONE_STATUS
         else:
             continue
 
