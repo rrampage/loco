@@ -19,6 +19,13 @@ class UserLocationSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ('created', 'updated')
 
+class MessageUpdateSerializer(serializers.ModelSerializer):
+    id = serializers.CharField(max_length=16, read_only=True)
+
+    class Meta:
+        model = Message
+        fields = ("status", "id")
+
 def parse_message(data):
 	result = {}
 	message = data.get('message')
@@ -40,8 +47,8 @@ def parse_message(data):
 	
 	result['id'] = id
 	result['status'] = status
-	result['sender'] = message.get('@to').replace('@localhost', '')
-	result['target'] = message.get('@from').replace('@localhost/Rooster', '')
+	result['target'] = message.get('@to').replace('@localhost', '')
+	result['sender'] = message.get('@from').replace('@localhost/Rooster', '')
 	result['team'] = message.get('team', {}).get('@id')
 	result['body'] = message.get('body')
 	result['thread'] = message.get('thread')

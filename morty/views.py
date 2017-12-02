@@ -10,7 +10,7 @@ from loco.services import cache
 
 from .parsers import XmlParser
 from .permissions import IsSuperUser
-from .serializers import AttendanceSerializer, UserLocationSerializer, parse_message
+from .serializers import AttendanceSerializer, UserLocationSerializer, parse_message, MessageUpdateSerializer
 
 from accounts.models import User
 from accounts.serializers import UserSerializer
@@ -79,7 +79,7 @@ class MessageList(APIView):
             if not message.validate_next_status(message_data.get('status')):
                 return Response()
 
-            serializer = MessageSerializer(message, message_data)
+            serializer = MessageUpdateSerializer(message, message_data)
         else:
             serializer = MessageSerializer(data=message_data)
 
