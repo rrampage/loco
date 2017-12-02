@@ -8,8 +8,10 @@ from rest_framework.response import Response
 from rest_framework import permissions, status
 from rest_framework.views import APIView
 
+from loco.services import cache
+
 from .filters import is_noise
-from .models import UserLocation, get_users_location
+from .models import UserLocation
 from .serializers import UserLocationSerializer
 
 from accounts.models import User
@@ -72,7 +74,6 @@ def new_user_maps(request):
     snapped_locations_os_or = snapped_locations_os
     snapped_locations_os = json.dumps(snapped_locations_os)
 
-    print (json.dumps(snapped_locations_os))
 
     len_locations = len(filtered_locations)
     filtered_locations = json.dumps([(l.latitude, l.longitude) for l in filtered_locations])
@@ -86,7 +87,6 @@ def new_user_maps(request):
     }
     return render_to_response('maps.html', context)
 
-
 class LocationSubscriptionList(APIView):
     permission_classes = (permissions.IsAuthenticated, IsTeamMember, IsAdminOrReadOnly)
 
@@ -96,9 +96,9 @@ class LocationSubscriptionList(APIView):
         user_ids = request.data.get('user_ids', [])
         users = team.members.filter(id__in=user_ids)
         subscribe_location(request.user, users)
-        locations = get_users_location(users)
-        serializer = UserLocationSerializer(locations, many=True)
-        return Response(serializer.data)
+        locations = cache.get_users_location([u.id for u in users])
+        locations = [l for l in locations if l]
+        return Response(locations)
 
     def delete(self, request, team_id, format=None):
         team = get_object_or_404(Team, id=team_id)

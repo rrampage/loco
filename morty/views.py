@@ -6,11 +6,14 @@ from rest_framework import permissions, status
 from rest_framework.views import APIView
 from rest_framework.parsers import JSONParser
 
+from loco.services import cache
+
 from .parsers import XmlParser
 from .permissions import IsSuperUser
 from .serializers import AttendanceSerializer, UserLocationSerializer, parse_message
 
 from accounts.models import User
+from accounts.serializers import UserSerializer
 from teams.models import Team, Message
 from teams.serializers import TeamMembershipSerializer, MessageSerializer
 
@@ -29,7 +32,10 @@ def get_chats(request, team_id, user_id, format=None):
 def set_user_location(request, format=None):
     serializer = UserLocationSerializer(data=request.data)
     if serializer.is_valid():
-        serializer.save()
+        location = serializer.save()
+        data = serializer.data
+        data['user'] = UserSerializer(location.user).data
+        cache.set_user_location(location.user.id, data)
         return Response()
 
     return Response(data=serializer.errors, status=400)
