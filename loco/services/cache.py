@@ -48,7 +48,7 @@ def get_user_status(user_id):
 
 	key = KEY_STATUS + str(user_id)
 	status = cache.hgetall(key)
-	last_ping = get_user_ping([user_id])
+	last_ping = get_user_ping(user_id)
 	if not status.get(KEY_STATUS_SIGNIN) == 'True' or not last_ping:
 		return USER_STATUS_SIGNEDOUT
 	else:
@@ -83,7 +83,7 @@ def set_user_ping(user, location_data):
 	key = KEY_PING + str(user_id)
 	cache.set(key, pickle.dumps(location_data))
 
-	last_ping = get_user_ping([user_id])
+	last_ping = get_user_ping(user_id)
 	if not last_ping:
 		return
 
