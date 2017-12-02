@@ -84,15 +84,18 @@ class Team(BaseModel):
     def get_visible_events_by_date(self, user, date):
         try:
             membership = TeamMembership.objects.get(user=user, team=self)
+            location_events = []
+            phone_events = []
             if membership.role == TeamMembership.ROLE_ADMIN:
                 attendance = self.attendance_set.filter(timestamp__date=date)
                 checkins = self.checkin_set.filter(timestamp__date=date)
             elif membership.role == TeamMembership.ROLE_MEMBER:
                 attendance = user.attendance_set.filter(timestamp__date=date)
                 checkins = user.checkin_set.filter(timestamp__date=date)
+                location_events = user.locationstatus_set.filter(timestamp__date=date)
+                phone_events = user.phonestatus_set.filter(timestamp__date=date)
 
-
-            events = list(attendance) + list(checkins)
+            events = list(attendance) + list(checkins) + list(location_events) + list(phone_events)
             return self._sort_events(events)
 
         except ObjectDoesNotExist:
@@ -103,15 +106,18 @@ class Team(BaseModel):
     def get_visible_events_by_page(self, user, start, limit):
         try:
             membership = TeamMembership.objects.get(user=user, team=self)
+            location_events = []
+            phone_events = []
             if membership.role == TeamMembership.ROLE_ADMIN:
                 attendance = self.attendance_set.all().order_by('-timestamp')[0:start+limit]
                 checkins = self.checkin_set.all().order_by('-timestamp')[0:start+limit]
             elif membership.role == TeamMembership.ROLE_MEMBER:
                 attendance = user.attendance_set.all().order_by('-timestamp')[0:start+limit]
                 checkins = user.checkin_set.all().order_by('-timestamp')[0:start+limit]
+                location_events = user.locationstatus_set.filter(timestamp__date=date)
+                phone_events = user.phonestatus_set.filter(timestamp__date=date)
 
-
-            events = list(attendance) + list(checkins)
+            events = list(attendance) + list(checkins) + list(location_events) + list(phone_events)
             events = self._sort_events(events)
             return events[start:start+limit]
 

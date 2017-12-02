@@ -4,7 +4,6 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 
 from loco.models import BaseModel
-from loco.services import cache
 
 from .usermanager import UserManager, UserOtpManager
 
@@ -60,14 +59,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     def update_online(self, status):
         self.is_online = status
         self.save()
-        if status:
-            cache.set_user_status(self.id, cache.USER_STATUS_SIGNEDIN)
-        else:
-            cache.set_user_status(self.id, cache.USER_STATUS_SIGNEDOUT)
-
-    def get_current_status(self):
-        status = cache.get_user_status(self.id)
-        return status
 
     def get_memberships(self):
         return self.teammembership_set.exclude(status=teams_constants.STATUS_ACCEPTED)

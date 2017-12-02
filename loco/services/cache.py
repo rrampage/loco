@@ -3,6 +3,7 @@ from datetime import timedelta
 from dateutil.parser import parse
 from django.conf import settings
 from django.utils import timezone
+from locations.models import LocationStatus, PhoneStatus
 
 CACHE_LOCATION = 'loco.masterpeace.in'
 CACHE_PORT = 6174
@@ -40,20 +41,20 @@ def get_user_status(user_id):
 	if  status == USER_STATUS_SIGNEDOUT or not last_location:
 		return status
 
-	last_location_time = parse(last_location.get('updated'))
+	last_location_time = parse(last_location.get('timestamp'))
 	if timezone.now() - last_location_time > timedelta(minutes=10):
 		return USER_STATUS_UNREACHABLE
 
 	status = status or ''
 	return status
 
-def set_user_status(user_id, status):
+def set_user_status(user_id, status, force=False):
 	if not user_id or not status:
 		return
 		
 	key = KEY_STATUS + str(user_id)
 	last_status = get_user_status(user_id)
-	if last_status != USER_STATUS_SIGNEDOUT:
+	if force or last_status != USER_STATUS_SIGNEDOUT:
 		cache.set(key, status)
 
 def set_user_location(user_id, location_data):
@@ -67,7 +68,26 @@ def set_user_location(user_id, location_data):
 	if not last_location:
 		return
 
+	last_location_time = parse(last_location.get('timestamp'))
+	if timezone.now() - last_location_time > timedelta(minutes=10):
+		PhoneStatus.objects.create(
+			action_type=PhoneStatus.ACTION_OFF,
+			**last_location
+		)
+		PhoneStatus.objects.create(
+			action_type=PhoneStatus.ACTION_ON,
+			**location_data
+		)
+
 	if not location_data.get('latitude') and last_location.get('latitude'):
 		set_user_status(user_id, USER_STATUS_LOCATIONOFF)
+		LocationStatus.objects.create(
+			 action_type = LocationStatus.ACTION_OFF,
+			 **last_location
+		)
 	elif location_data.get('latitude') and not last_location.get('latitude'):
 		set_user_status(user_id, USER_STATUS_SIGNEDIN)
+		LocationStatus.objects.create(
+			 action_type = LocationStatus.ACTION_ON,
+			 **location_data
+		)

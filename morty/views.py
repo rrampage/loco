@@ -46,7 +46,12 @@ def set_user_attendance(request, format=None):
     serializer = AttendanceSerializer(data=request.data)
     if serializer.is_valid():
         attendance = serializer.save()
-        attendance.user.update_online(attendance.action_type==attendance.ACTION_SIGNIN)
+
+        if attendance.action_type==attendance.ACTION_SIGNIN:
+            cache.set_user_status(self.id, cache.USER_STATUS_SIGNEDIN, True)
+        else:
+            cache.set_user_status(self.id, cache.USER_STATUS_SIGNEDOUT)
+
         return Response()
 
     return Response(data=serializer.errors, status=400)
