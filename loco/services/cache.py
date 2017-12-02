@@ -4,6 +4,7 @@ from dateutil.parser import parse
 from django.conf import settings
 from django.utils import timezone
 from locations.models import LocationStatus, PhoneStatus
+from accounts.models import User
 
 CACHE_LOCATION = 'loco.masterpeace.in'
 CACHE_PORT = 6174
@@ -22,6 +23,14 @@ USER_STATUS_SIGNEDIN = "signedin"
 USER_STATUS_SIGNEDOUT = "signedout" 
 USER_STATUS_LOCATIONOFF = "locationoff" 
 USER_STATUS_UNREACHABLE = "unreachable" 
+
+def _clean_location_data(location_data):
+	result = {}
+	result.update(location_data)
+	user = location_data['user']
+	result['user'] = User.objects.get(id=user['id'])
+	del result['id']
+	return result
 
 def get_users_location(user_ids):
 	if not user_ids:
@@ -72,22 +81,22 @@ def set_user_location(user_id, location_data):
 	if timezone.now() - last_location_time > timedelta(minutes=10):
 		PhoneStatus.objects.create(
 			action_type=PhoneStatus.ACTION_OFF,
-			**last_location
+			**_clean_location_data(last_location)
 		)
 		PhoneStatus.objects.create(
 			action_type=PhoneStatus.ACTION_ON,
-			**location_data
+			**_clean_location_data(location_data)
 		)
 
 	if not location_data.get('latitude') and last_location.get('latitude'):
 		set_user_status(user_id, USER_STATUS_LOCATIONOFF)
 		LocationStatus.objects.create(
 			 action_type = LocationStatus.ACTION_OFF,
-			 **last_location
+			 **_clean_location_data(last_location)
 		)
 	elif location_data.get('latitude') and not last_location.get('latitude'):
 		set_user_status(user_id, USER_STATUS_SIGNEDIN)
 		LocationStatus.objects.create(
 			 action_type = LocationStatus.ACTION_ON,
-			 **location_data
+			 **_clean_location_data(location_data)
 		)
