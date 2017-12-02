@@ -48,9 +48,9 @@ def set_user_attendance(request, format=None):
         attendance = serializer.save()
 
         if attendance.action_type==attendance.ACTION_SIGNIN:
-            cache.set_user_status(self.id, cache.USER_STATUS_SIGNEDIN, True)
+            cache.set_user_status(attendance.user.id, cache.USER_STATUS_SIGNEDIN, True)
         else:
-            cache.set_user_status(self.id, cache.USER_STATUS_SIGNEDOUT)
+            cache.set_user_status(attendance.user.id, cache.USER_STATUS_SIGNEDOUT)
 
         return Response()
 
