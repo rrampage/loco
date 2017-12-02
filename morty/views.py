@@ -45,7 +45,8 @@ def set_user_location(request, format=None):
 def set_user_attendance(request, format=None):
     serializer = AttendanceSerializer(data=request.data)
     if serializer.is_valid():
-        serializer.save()
+        attendance = serializer.save()
+        attendance.user.update_online(attendance.action_type==attendance.ACTION_SIGNIN)
         return Response()
 
     return Response(data=serializer.errors, status=400)
