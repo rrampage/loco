@@ -45,6 +45,10 @@ def set_user_location(request, format=None):
 def set_user_attendance(request, format=None):
     serializer = AttendanceSerializer(data=request.data)
     if serializer.is_valid():
+        latitude = serializer.validated_data.get('latitude')
+        if not latitude:
+            return Response()
+        
         attendance = serializer.save()
 
         if attendance.action_type==attendance.ACTION_SIGNIN:
