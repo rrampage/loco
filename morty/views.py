@@ -32,10 +32,15 @@ def get_chats(request, team_id, user_id, format=None):
 def set_user_location(request, format=None):
     serializer = UserLocationSerializer(data=request.data)
     if serializer.is_valid():
-        location = serializer.save()
-        data = serializer.data
-        data['user'] = UserSerializer(location.user).data
-        cache.set_user_location(location.user.id, data)
+        location_data = serializer.validated_data
+        cache.set_user_ping(location_data['user'], location_data)
+        latitude = serializer.validated_data.get('latitude')
+        if latitude:
+            location = serializer.save()
+            data = serializer.data
+            data['user'] = UserSerializer(location.user).data
+            cache.set_last_known_location(location.user.id, data)
+        
         return Response()
 
     return Response(data=serializer.errors, status=400)
@@ -52,9 +57,9 @@ def set_user_attendance(request, format=None):
         attendance = serializer.save()
 
         if attendance.action_type==attendance.ACTION_SIGNIN:
-            cache.set_user_status(attendance.user.id, cache.USER_STATUS_SIGNEDIN, True)
+            cache.set_user_signin_status(attendance.user.id, True)
         else:
-            cache.set_user_status(attendance.user.id, cache.USER_STATUS_SIGNEDOUT)
+            cache.set_user_signin_status(attendance.user.id, False)
 
         return Response()
 

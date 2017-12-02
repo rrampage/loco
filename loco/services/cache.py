@@ -16,87 +16,111 @@ db = CACHE_DB
 pool = redis.ConnectionPool(host=host, port=port, db=db, password="lokopass")
 cache = redis.Redis(connection_pool=pool)
 
-KEY_LOCATION = "location_"
+KEY_PING = "ping_"
+KEY_LAST_LOCATION = "last_location_"
 KEY_STATUS = "status_"
+KEY_STATUS_SIGNIN = "signin"
+KEY_STATUS_LOCATION = "location"
 
 USER_STATUS_SIGNEDIN = "signedin" 
 USER_STATUS_SIGNEDOUT = "signedout" 
 USER_STATUS_LOCATIONOFF = "locationoff" 
 USER_STATUS_UNREACHABLE = "unreachable" 
 
-def _clean_location_data(location_data):
+def _clean_ping_data(location_data):
 	result = {}
 	result.update(location_data)
-	user = location_data['user']
-	result['user'] = User.objects.get(id=user['id'])
-	del result['id']
+	user_id = location_data['user']
+	result['user'] = User.objects.get(id=user_id)
+	result.pop('id', None)
 	return result
 
-def get_users_location(user_ids):
-	if not user_ids:
+def get_user_ping(user_id):
+	if not user_id:
 		return 
 
-	keys = [KEY_LOCATION+str(id) for id in user_ids]
-	rows = cache.mget(keys)
-	return [pickle.loads(row) if row else None for row in rows]
+	key = KEY_PING+str(user_id)
+	return cache.get(key)
 
 def get_user_status(user_id):
 	if not user_id:
 		return 
 
 	key = KEY_STATUS + str(user_id)
-	status = cache.get(key)
-	last_location = get_users_location([user_id])[0]
-	if  status == USER_STATUS_SIGNEDOUT or not last_location:
-		return status
+	status = cache.hgetall(key)
+	last_ping = get_user_ping([user_id])
+	if not status.get(KEY_STATUS_SIGNIN) or not last_ping:
+		return USER_STATUS_SIGNEDOUT
+	else:
+		last_ping_time = parse(last_ping.get('timestamp'))
+		if timezone.now() - last_ping_time > timedelta(minutes=10):
+			return USER_STATUS_UNREACHABLE
 
-	last_location_time = parse(last_location.get('timestamp'))
-	if timezone.now() - last_location_time > timedelta(minutes=10):
-		return USER_STATUS_UNREACHABLE
+		if not status.get(KEY_STATUS_LOCATION):
+			return USER_STATUS_LOCATIONOFF
 
-	status = status or ''
-	return status
+	return USER_STATUS_SIGNEDIN
 
-def set_user_status(user_id, status, force=False):
-	if not user_id or not status:
+def set_user_signin_status(user_id, status):
+	if not user_id:
 		return
 		
 	key = KEY_STATUS + str(user_id)
-	last_status = get_user_status(user_id)
-	if force or last_status != USER_STATUS_SIGNEDOUT:
-		cache.set(key, status)
+	cache.hset(key, KEY_STATUS_SIGNIN, status)
 
-def set_user_location(user_id, location_data):
+def set_user_location_status(user_id, status):
+	if not user_id:
+		return
+		
+	key = KEY_STATUS + str(user_id)
+	cache.hset(key, KEY_STATUS_LOCATION, status)
+
+def set_user_ping(user_id, location_data):
 	if not user_id or not location_data:
 		return
 		
-	key = KEY_LOCATION + str(user_id)
+	key = KEY_PING + str(user_id)
 	cache.set(key, pickle.dumps(location_data))
 
-	last_location = get_users_location([user_id])[0]
-	if not last_location:
+	last_ping = get_user_ping([user_id])
+	if not last_ping:
 		return
 
-	last_location_time = parse(last_location.get('timestamp'))
-	if timezone.now() - last_location_time > timedelta(minutes=10):
+	last_ping_time = parse(last_ping.get('timestamp'))
+	if timezone.now() - last_ping_time > timedelta(minutes=10):
 		PhoneStatus.objects.create(
 			action_type=PhoneStatus.ACTION_OFF,
-			**_clean_location_data(last_location)
+			**_clean_ping_data(last_ping)
 		)
 		PhoneStatus.objects.create(
 			action_type=PhoneStatus.ACTION_ON,
-			**_clean_location_data(location_data)
+			**_clean_ping_data(location_data)
 		)
 
-	if not location_data.get('latitude') and last_location.get('latitude'):
-		set_user_status(user_id, USER_STATUS_LOCATIONOFF)
+	if not location_data.get('latitude') and last_ping.get('latitude'):
+		set_user_location_status(user_id, True)
 		LocationStatus.objects.create(
 			 action_type = LocationStatus.ACTION_OFF,
-			 **_clean_location_data(last_location)
+			 **_clean_ping_data(last_ping)
 		)
-	elif location_data.get('latitude') and not last_location.get('latitude'):
-		set_user_status(user_id, USER_STATUS_SIGNEDIN)
+	elif location_data.get('latitude') and not last_ping.get('latitude'):
+		set_user_location_status(user_id, False)
 		LocationStatus.objects.create(
 			 action_type = LocationStatus.ACTION_ON,
-			 **_clean_location_data(location_data)
+			 **_clean_ping_data(location_data)
 		)
+
+def set_last_known_location(user_id, location_data):
+	if not user_id or not location_data:
+		return
+		
+	key = KEY_LAST_LOCATION + str(user_id)
+	cache.set(key, pickle.dumps(location_data))
+
+def get_users_last_location(user_ids):
+	if not user_ids:
+		return 
+
+	keys = [KEY_LAST_LOCATION+str(id) for id in user_ids]
+	rows = cache.mget(keys)
+	return [pickle.loads(row) if row else None for row in rows]
