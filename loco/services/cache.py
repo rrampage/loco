@@ -75,10 +75,11 @@ def set_user_location_status(user_id, status):
 	key = KEY_STATUS + str(user_id)
 	cache.hset(key, KEY_STATUS_LOCATION, status)
 
-def set_user_ping(user_id, location_data):
-	if not user_id or not location_data:
+def set_user_ping(user, location_data):
+	if not user or not location_data:
 		return
-		
+	
+	user_id = user.id
 	key = KEY_PING + str(user_id)
 	cache.set(key, pickle.dumps(location_data))
 
