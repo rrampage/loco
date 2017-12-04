@@ -100,3 +100,9 @@ class MessageSerializer(serializers.ModelSerializer):
         model = Message
         fields = "__all__"
         read_only_fields = ('created', 'updated')
+
+    def validate_body(self, value):
+        if not value:
+            return ''
+
+        return value.strip().encode('utf-8')
