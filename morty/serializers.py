@@ -6,6 +6,7 @@ from teams.serializers import TeamSerializer
 from locations.serializers import UserLocation
 
 class AttendanceSerializer(serializers.ModelSerializer):
+    message_id = serializers.CharField(max_length=40)
 
     class Meta:
         model = Attendance
@@ -27,30 +28,30 @@ class MessageUpdateSerializer(serializers.ModelSerializer):
         fields = ("status", "id")
 
 def parse_message(data):
-	result = {}
-	message = data.get('message')
-	if not message:
-		return (None, "Message not found")
+    result = {}
+    message = data.get('message')
+    if not message:
+        return (None, "Message not found")
 
-	id = message.get('@id')
-	status = Message.STATUS_SENT
+    id = message.get('@id')
+    status = Message.STATUS_SENT
 
-	delivery = message.get('delivery')
-	if delivery:
-		status = Message.STATUS_DELIVERED
-		id = delivery.get("#text")
+    delivery = message.get('delivery')
+    if delivery:
+        status = Message.STATUS_DELIVERED
+        id = delivery.get("#text")
 
-	read = message.get('read')
-	if read:
-		status = Message.STATUS_READ
-		id = delivery.get("#text")
-	
-	result['id'] = id
-	result['status'] = status
-	result['target'] = message.get('@to').replace('@localhost', '')
-	result['sender'] = message.get('@from').replace('@localhost/Rooster', '')
-	result['team'] = message.get('team', {}).get('@id')
-	result['body'] = message.get('body')
-	result['thread'] = message.get('thread')
-	result['original'] = data.get('original')
-	return (result, None)
+    read = message.get('read')
+    if read:
+        status = Message.STATUS_READ
+        id = delivery.get("#text")
+    
+    result['id'] = id
+    result['status'] = status
+    result['target'] = message.get('@to').replace('@localhost', '')
+    result['sender'] = message.get('@from').replace('@localhost/Rooster', '')
+    result['team'] = message.get('team', {}).get('@id')
+    result['body'] = message.get('body')
+    result['thread'] = message.get('thread')
+    result['original'] = data.get('original')
+    return (result, None)

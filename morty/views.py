@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from django.db import IntegrityError
 
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.response import Response
@@ -61,16 +62,14 @@ def set_user_location(request, format=None):
 def set_user_attendance(request, format=None):
     serializer = AttendanceSerializer(data=request.data)
     if serializer.is_valid():
-        latitude = serializer.validated_data.get('latitude')
-        if not latitude:
-            return Response()
-        
-        attendance = serializer.save()
-
-        if attendance.action_type==attendance.ACTION_SIGNIN:
-            cache.set_user_signin_status(attendance.user.id, True)
-        else:
-            cache.set_user_signin_status(attendance.user.id, False)
+        try:        
+            attendance = serializer.save()
+            if attendance.action_type==attendance.ACTION_SIGNIN:
+                cache.set_user_signin_status(attendance.user.id, True)
+            else:
+                cache.set_user_signin_status(attendance.user.id, False)
+        except IntegrityError:
+            pass
 
         return Response()
 

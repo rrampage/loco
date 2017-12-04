@@ -186,6 +186,7 @@ class Attendance(BaseLocationModel):
 
     team = models.ForeignKey(Team, on_delete=models.DO_NOTHING)
     action_type = models.CharField(max_length=10, choices=ACTION_CHOICES)
+    message_id = models.CharField(max_length=40, unique=True)
 
 def user_media_path(instance, filename):
     return 'teams/{0}/users/{1}/{2}/{3}'.format(
