@@ -62,7 +62,7 @@ def get_user_status(user_id):
 		if timezone.now() - last_ping_time > timedelta(minutes=10):
 			return USER_STATUS_UNREACHABLE
 
-		if not status.get(KEY_STATUS_LOCATION) == 'True':
+		if status.get(KEY_STATUS_LOCATION) == 'False':
 			return USER_STATUS_LOCATIONOFF
 
 	return USER_STATUS_SIGNEDIN
