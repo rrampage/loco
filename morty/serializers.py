@@ -44,7 +44,7 @@ def parse_message(data):
     read = message.get('read')
     if read:
         status = Message.STATUS_READ
-        id = delivery.get("#text")
+        id = read.get("#text")
     
     result['id'] = id
     result['status'] = status
