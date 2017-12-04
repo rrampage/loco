@@ -27,18 +27,15 @@ USER_STATUS_SIGNEDOUT = "signedout"
 USER_STATUS_LOCATIONOFF = "locationoff" 
 USER_STATUS_UNREACHABLE = "unreachable" 
 
+def _hydrate_user(ping_data):
+	if not ping_data:
+		return {}
 
-def _clean_ping_data(ping_data):
-	result = {}
-	for key in ping_data:
-		if key == 'id':
-			continue
-		elif key=='user':
-			user_id = ping_data['user'].id
-			result[key] = User.objects.get(id=user_id)
-		else:
-			result[key] = str(ping_data[key])
-	return result
+	if 'user' in ping_data:
+		user_id = ping_data['user']
+		ping_data['user'] = User.objects.get(id=user_id)
+
+	return ping_data
 
 def get_user_ping(user_id):
 	if not user_id:
@@ -84,12 +81,11 @@ def set_user_location_status(user_id, status):
 	key = KEY_STATUS + str(user_id)
 	cache.hset(key, KEY_STATUS_LOCATION, status)
 
-def set_user_ping(user_id, ping_data):
-	if not user_id or not ping_data:
+def set_user_ping(user_id, new_ping):
+	if not user_id or not new_ping:
 		return
 	
 	key = KEY_PING + str(user_id)
-	new_ping = _clean_ping_data(ping_data)
 	cache.set(key, pickle.dumps(new_ping))
 
 	last_ping = get_user_ping(user_id)
@@ -98,15 +94,15 @@ def set_user_ping(user_id, ping_data):
 
 	last_ping_time = parse(last_ping.get('timestamp'))
 	if timezone.now() - last_ping_time > timedelta(minutes=10):
-		PhoneStatus.objects.create(action_type=PhoneStatus.ACTION_OFF, **last_ping)
-		PhoneStatus.objects.create(action_type=PhoneStatus.ACTION_ON, **new_ping)
+		PhoneStatus.objects.create(action_type=PhoneStatus.ACTION_OFF, **_hydrate_user(last_ping))
+		PhoneStatus.objects.create(action_type=PhoneStatus.ACTION_ON, **_hydrate_user(new_ping))
 
 	if not new_ping.get('latitude') and last_ping.get('latitude'):
 		set_user_location_status(user_id, True)
-		LocationStatus.objects.create(action_type=LocationStatus.ACTION_OFF, **last_ping)
+		LocationStatus.objects.create(action_type=LocationStatus.ACTION_OFF, **_hydrate_user(last_ping))
 	elif new_ping.get('latitude') and not last_ping.get('latitude'):
 		set_user_location_status(user_id, False)
-		LocationStatus.objects.create(action_type=LocationStatus.ACTION_ON, **new_ping)
+		LocationStatus.objects.create(action_type=LocationStatus.ACTION_ON, **_hydrate_user(new_ping))
 
 def set_last_known_location(user_id, location_data):
 	if not user_id or not location_data:

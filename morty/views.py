@@ -17,6 +17,16 @@ from accounts.serializers import UserSerializer
 from teams.models import Team, Message
 from teams.serializers import TeamMembershipSerializer, MessageSerializer
 
+def _clean_ping_data(ping_data):
+    result = {}
+    for key in ping_data:
+        if key == 'id':
+            continue
+        elif key=='user':
+            result[key] = ping_data['user'].id
+        else:
+            result[key] = str(ping_data[key])
+    return result
 
 @api_view(['GET'])
 @permission_classes((permissions.IsAuthenticated, IsSuperUser))
@@ -32,8 +42,9 @@ def get_chats(request, team_id, user_id, format=None):
 def set_user_location(request, format=None):
     serializer = UserLocationSerializer(data=request.data)
     if serializer.is_valid():
-        location_data = serializer.validated_data
-        cache.set_user_ping(location_data['user'], location_data)
+        ping_data = serializer.validated_data
+        ping_data = _clean_ping_data(ping_data)
+        cache.set_user_ping(ping_data['user'], ping_data)
         latitude = serializer.validated_data.get('latitude')
         if latitude:
             location = serializer.save()
