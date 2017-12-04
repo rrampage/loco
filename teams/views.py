@@ -16,6 +16,7 @@ from .serializers import TeamSerializer, TeamMembershipSerializer, CheckinSerial
 from .permissions import IsTeamMember, IsAdminOrReadOnly, IsAdmin, IsMe
 
 from accounts.models import User
+from accounts.serializers import UserSerializer
 
 class TeamList(APIView):
     permission_classes = (permissions.IsAuthenticated, )
@@ -108,6 +109,16 @@ class TeamMembershipDetail(APIView):
         self.check_object_permissions(self.request, membership)
         membership.delete()
         return Response(status=204)
+
+class TeamMemberDetail(APIView):
+    permission_classes = (permissions.IsAuthenticated, IsAdminOrReadOnly)
+
+    def get(self, request, team_id, user_id, format=None):
+        team = get_object_or_404(Team, id=team_id)
+        self.check_object_permissions(self.request, team)
+        user = get_object_or_404(User, id=user_id)
+        serializer = UserSerializer(user)
+        return Response(data=serializer.data)
 
 class TeamMembershipStatus(APIView):
     permission_classes = (permissions.IsAuthenticated, )
