@@ -98,10 +98,10 @@ def set_user_ping(user_id, new_ping):
 		PhoneStatus.objects.create(action_type=PhoneStatus.ACTION_ON, **_hydrate_user(new_ping))
 
 	if not new_ping.get('latitude') and last_ping.get('latitude'):
-		set_user_location_status(user_id, True)
+		set_user_location_status(user_id, False)
 		LocationStatus.objects.create(action_type=LocationStatus.ACTION_OFF, **_hydrate_user(last_ping))
 	elif new_ping.get('latitude') and not last_ping.get('latitude'):
-		set_user_location_status(user_id, False)
+		set_user_location_status(user_id, True)
 		LocationStatus.objects.create(action_type=LocationStatus.ACTION_ON, **_hydrate_user(new_ping))
 
 def set_last_known_location(user_id, location_data):
