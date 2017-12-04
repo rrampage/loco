@@ -159,3 +159,78 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.BasicAuthentication',
     ),
 }
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': True,
+    'root': {
+        'level': 'WARNING',
+        'handlers': ['console', 'loco_errors'],
+    },
+
+    'formatters': {
+        'console': {
+            'format': '[%(asctime)s][%(levelname)s] '
+                      '%(filename)s:%(funcName)s:%(lineno)d [%(threadName)s] | %(message)s',
+            'datefmt': '%H:%M:%S',
+        },
+    },
+
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'console'
+        },
+        'loco_errors': {
+            'level': 'WARNING',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'formatter': 'console',
+            'maxBytes': 16777216,
+            'backupCount': 5,
+            'filename': os.path.join(BASE_DIR, '../log/loco_error.log'),
+        },
+        'error_file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'formatter': 'console',
+            'maxBytes': 16777216,
+            'backupCount': 5,
+            'filename': os.path.join(BASE_DIR, '../log/gunicorn/error.log'),
+        },
+        'access_file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'formatter': 'console',
+            'maxBytes': 16777216,
+            'backupCount': 5,
+            'filename': os.path.join(BASE_DIR, '../log/gunicorn/access.log'),
+        },
+    },
+
+    'loggers': {
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['loco_errors'],
+            'level': 'WARNING',
+            'propagate': True,
+        },
+        'custom': {
+            'handlers': ['console', 'loco_errors'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        'gunicorn.error': {
+            'level': 'INFO',
+            'handlers': ['error_file'],
+            'propagate': True,
+        },
+        'gunicorn.access': {
+            'level': 'INFO',
+            'handlers': ['access_file'],
+            'propagate': False,
+        },
+    }
+}
