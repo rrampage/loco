@@ -81,6 +81,13 @@ def set_user_location_status(user_id, status):
 	key = KEY_STATUS + str(user_id)
 	cache.hset(key, KEY_STATUS_LOCATION, status)
 
+def get_user_location_status(user_id):
+	if not user_id:
+		return
+		
+	key = KEY_STATUS + str(user_id)
+	return cache.hget(key, KEY_STATUS_LOCATION)
+
 def set_user_ping(user_id, new_ping):
 	if not user_id or not new_ping:
 		return
@@ -97,10 +104,11 @@ def set_user_ping(user_id, new_ping):
 		PhoneStatus.objects.create(action_type=PhoneStatus.ACTION_OFF, **_hydrate_user(last_ping))
 		PhoneStatus.objects.create(action_type=PhoneStatus.ACTION_ON, **_hydrate_user(new_ping))
 
-	if new_ping.get('latitude') == '0.0' and last_ping.get('latitude') != '0.0':
+	current_location_status = get_user_location_status(user_id)
+	if new_ping.get('latitude') == '0.0' and current_location_status != 'False':
 		set_user_location_status(user_id, False)
 		LocationStatus.objects.create(action_type=LocationStatus.ACTION_OFF, **_hydrate_user(last_ping))
-	elif new_ping.get('latitude') != '0.0' and last_ping.get('latitude') == '0.0':
+	elif new_ping.get('latitude') != '0.0' and current_location_status == 'False':
 		set_user_location_status(user_id, True)
 		LocationStatus.objects.create(action_type=LocationStatus.ACTION_ON, **_hydrate_user(new_ping))
 
