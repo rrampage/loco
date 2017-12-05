@@ -210,7 +210,7 @@ class Message(BaseModel):
     )
 
     id = models.CharField(max_length=16, primary_key=True, editable=False)
-    thread = models.CharField(max_length=32, editable=False)
+    thread = models.CharField(max_length=32)
     team = models.ForeignKey(Team, on_delete=models.DO_NOTHING)
     status = models.CharField(max_length=10, choices=STATUS_CHOICES)
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="sent_messages")

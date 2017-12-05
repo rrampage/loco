@@ -90,7 +90,7 @@ class MessageList(APIView):
         status = request.query_params.get(PARAM_STATUS)
 
         messages = Message.objects.filter(
-            target=target, team=team, status=status).order_by('-created')
+            target=target, team=team, status=status).order_by('created')
         serializer = MessageSerializer(messages, many=True)
         return Response(serializer.data)
 
