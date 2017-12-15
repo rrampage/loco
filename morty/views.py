@@ -122,5 +122,8 @@ class MessageList(APIView):
 def send_user_gcm(request, user_id, format=None):
     user = get_object_or_404(User, id=user_id)
     data = request.data
-    send_gcm_async.delay(user.gcm_token, data)
-    return Response(data=serializer.errors, status=400)
+    if data:
+        send_gcm_async.delay(user.gcm_token, data)
+        return Response()
+
+    return Response(status=400)
