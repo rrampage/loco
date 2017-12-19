@@ -16,6 +16,8 @@ def deploy():
     _update_static_files(source_folder)
     _update_database(source_folder)
     _restart_service()
+    _copy_celery_config(source_folder)
+    _restart_celery()
 
 
 def _create_directory_structure_if_necessary(site_folder):
@@ -72,3 +74,9 @@ def _update_database(source_folder):
 
 def _restart_service():
     run('sudo service loco restart')
+
+def _copy_celery_config(source_folder):
+    run('sudo cp %s/deploy/celeryd_conf /etc/default/celeryd' % (source_folder))
+
+def _restart_celery():
+    run('sudo service celeryd restart')

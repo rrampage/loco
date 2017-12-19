@@ -70,6 +70,7 @@ TYPE_CHECKIN = 'checkin'
 TYPE_ATTENDANCE = 'attendance'
 TYPE_LOCATION_STATUS = 'location_status'
 TYPE_PHONE_STATUS = 'phone_status'
+TYPE_LAST_LOCATION = 'last_location'
 
 def serialize_events(events):
     results = []

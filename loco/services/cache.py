@@ -126,3 +126,14 @@ def get_users_last_location(user_ids):
 	keys = [KEY_LAST_LOCATION+str(id) for id in user_ids]
 	rows = cache.mget(keys)
 	return [pickle.loads(row) if row else None for row in rows]
+
+def get_user_last_location(user_id):
+	if not user_id:
+		return
+
+	last_location = get_users_last_location([user_id])
+	if last_location:
+		last_location = last_location[0]
+		if 'user' in last_location:
+		    last_location['user']['status'] = get_user_status(user_id)
+		    return last_location

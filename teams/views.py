@@ -254,15 +254,27 @@ def get_user_events(request, team_id, user_id, format=None):
     if not team.is_admin(request.user):
         return Response(status=403)
 
+    add_last_location = False
     user = team.members.get(id=user_id)
     date = utils.get_query_date(request)
+
     if date:
         events = team.get_visible_events_by_date(user, date)
+        if date == datetime.now().date():
+            add_last_location = True
     else:
         start, limit = utils.get_query_start_limit(request)
         events = team.get_visible_events_by_page(user, start, limit)
+        if start in [0, '0']:
+            add_last_location = True
 
     data = serialize_events(events)
+    if add_last_location:
+        last_location = cache.get_user_last_location(user.id)
+        if last_location:
+            last_location['type'] = serializer.TYPE_LAST_LOCATION
+            data.insert(0, last_location)
+
     return Response(data)
 
 @api_view(['POST'])
