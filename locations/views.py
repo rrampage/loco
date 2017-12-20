@@ -1,4 +1,5 @@
 import json, requests, polyline
+from datetime import datetime
 
 from django.shortcuts import get_object_or_404
 from django.shortcuts import render_to_response
@@ -8,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework import permissions, status
 from rest_framework.views import APIView
 
+from loco import utils
 from loco.services import cache
 
 from .filters import is_noise
@@ -15,8 +17,8 @@ from .models import UserLocation
 from .serializers import UserLocationSerializer
 
 from accounts.models import User
-from teams.models import Team
-from teams.permissions import IsTeamMember, IsAdminOrReadOnly
+from teams.models import Team, TeamMembership
+from teams.permissions import IsTeamMember, IsAdminOrReadOnly, IsAdminOrMe
 from morty.services import subscribe_location, unsubscribe_location
 
 def get_snapped_mp(locations, loc_type):
@@ -107,3 +109,16 @@ class LocationSubscriptionList(APIView):
         users = team.members.filter(id__in=user_ids)
         unsubscribe_location(request.user, users)
         return Response()
+
+class UserLocationList(APIView):
+    permission_classes = (permissions.IsAuthenticated, IsAdminOrMe)
+
+    def get(self, request, team_id, user_id, format=None):
+        membership = get_object_or_404(TeamMembership, team=team_id, user=user_id)
+        self.check_object_permissions(self.request, membership)
+
+        date = utils.get_query_date(request, datetime.now().date())
+        user = membership.user
+        locations = user.userlocation_set.filter(timestamp__date=date)
+        polyline = utils.to_polyline(locations)
+        return Response({'polyline': polyline})
