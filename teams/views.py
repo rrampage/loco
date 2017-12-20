@@ -8,11 +8,12 @@ from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser
 
 from loco import utils
+from loco.services import cache
 
 from . import constants
 from .models import Team, TeamMembership, Checkin, CheckinMedia, Message
 from .serializers import TeamSerializer, TeamMembershipSerializer, CheckinSerializer,\
-    UserMediaSerializer, CheckinMediaSerializer, serialize_events, MessageSerializer
+    UserMediaSerializer, CheckinMediaSerializer, serialize_events, MessageSerializer, TYPE_LAST_LOCATION
 from .permissions import IsTeamMember, IsAdminOrReadOnly, IsAdmin, IsMe
 
 from accounts.models import User
@@ -272,7 +273,7 @@ def get_user_events(request, team_id, user_id, format=None):
     if add_last_location:
         last_location = cache.get_user_last_location(user.id)
         if last_location:
-            last_location['type'] = serializer.TYPE_LAST_LOCATION
+            last_location['type'] = TYPE_LAST_LOCATION
             data.insert(0, last_location)
 
     return Response(data)
