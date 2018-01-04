@@ -89,6 +89,30 @@ def new_user_maps(request):
     }
     return render_to_response('maps.html', context)
 
+def raw_user_maps(request):
+    uid = request.GET.get('uid')
+    start = request.GET.get('start')
+    end = request.GET.get('end')
+    filter_noise = request.GET.get('filter_noise', False)
+    filter_dis = float(request.GET.get('filter_dis', 0.1))
+    locations = list(UserLocation.objects.filter(user_id=uid, timestamp__gte=start, timestamp__lte=end))
+    filtered_locations = []
+
+    for i in range(1, len(locations)):
+        if filter_noise and not is_noise(locations[i], locations[i-1]):
+            filtered_locations.append(locations[i])
+        elif not filter_noise:
+            filtered_locations.append(locations[i])
+
+    len_locations = len(filtered_locations)
+    filtered_locations = json.dumps([(l.latitude, l.longitude, l.accuracy) for l in filtered_locations])
+
+    context = {
+        'locations': filtered_locations, 
+        'len_locations': len_locations, 
+    }
+    return render_to_response('maps_raw.html', context)
+
 class LocationSubscriptionList(APIView):
     permission_classes = (permissions.IsAuthenticated, IsTeamMember, IsAdminOrReadOnly)
 

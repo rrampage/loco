@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 100%;
+        width: 70%;
+        padding: 0;
+        display: inline-block;
+      }
+
+      #details {
+        height: 100%;
+        width: 29%;
+        display: inline-block;
+        padding: 0;
+        vertical-align: top;
+      }
+
+      #details li {
+        width: 100%;
+        padding: 16px;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <ul id="details">
+        {% for  locations in snapped_locations_os_or %}
+        <li onclick="callMap({{ forloop.counter0 }})">
+            {{ forloop.counter0 }}
+        </li>
+        {% endfor %}
+    </ul>
+    <div id="map"></div>
+    <script>
+      var map;
+
+
+      function getRandomColor() {
+        var letters = '0123456789ABCDEF';
+        var color = '#';
+        for (var i = 0; i < 6; i++) {
+          color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
+      }
+
+      function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 9,
+          center: new google.maps.LatLng(2.8,-187.3),
+          mapTypeId: 'terrain'
+        });
+        // Create a <script> tag and set the USGS URL as the source.
+        var script = document.createElement('script');
+        // This example uses a local copy of the GeoJSON stored at
+        // http://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_week.geojsonp
+        script.src = '{{data_url}}';
+        document.getElementsByTagName('head')[0].appendChild(script);
+        eqfeed_callback({{locations}})
+        draw_path_locations({{locations}}, '#0000FF');
+        // eqfeed_callback({{snapped_locations | safe}}, {{len_snapped_locations}}, true)
+        // var snapped_locations_mp = {{snapped_locations_mp | safe}};
+        // var snapped_locations_os = {{snapped_locations_os | safe}};
+        // console.log("snapped_locations_os", snapped_locations_os)
+        // draw_path(snapped_locations, '#FF0000');
+        // draw_path(snapped_locations_mp, '#00FF00');
+        // draw_path(snapped_locations_os, '#0000FF');
+        // var colors = ['#0000FF', '#FF0000', '#00FF00']
+        // for (var i = snapped_locations_os.length - 1; i >= 0; i--) {
+        //     draw_path(snapped_locations_os[i].matching, colors[i%3])
+        //     console.log('sample', snapped_locations_os[i])
+        //     eqfeed_callback(snapped_locations_os[i].original)
+        // }
+        
+      }
+
+      function callMap(index) {
+            draw_path(snapped_locations_os[index].matching, colors[index%3])
+            console.log('sample', snapped_locations_os[index])
+            eqfeed_callback(snapped_locations_os[index].original)
+      }
+      // Loop through the results array and place a marker for each
+      // set of coordinates.
+      window.eqfeed_callback = function(results, new_marker) {
+        var bounds = new google.maps.LatLngBounds();
+        var image = 'https://developers.google.com/maps/documentation/javascript/examples/full/images/beachflag.png';
+        console.log("locations", results);
+
+        for (var i = results.length; i >=0 ; i--) {
+            var data = results[i];
+            if (data) {
+                try{
+                    var latitude = data[0];
+                    var longitude = data[1];
+                    var latLng = new google.maps.LatLng(latitude,longitude);
+                    if (new_marker){
+                        var marker = new google.maps.Marker({
+                          position: latLng,
+                          map: map,
+                          icon: image
+                        });
+                    } else {
+                        var marker = new google.maps.Marker({
+                          position: latLng,
+                          map: map,
+                          label: i.toString()
+                        });
+                    }
+                    bounds.extend(latLng)
+                } catch (err) {
+                    console.error("Failed", data);
+                }
+            }
+        }
+        map.fitBounds(bounds);
+      }
+
+      window.draw_path = function(results, color) {
+        console.log("results", results)
+        var flightPath = new google.maps.Polyline({
+                  path: results,
+                  geodesic: true,
+                  strokeColor: color,
+                  strokeOpacity: 0.7,
+                  strokeWeight: 4
+                });
+
+        flightPath.setMap(map);
+      }
+
+      window.draw_path_locations = function(results, color) {
+        console.log(results);
+        var locations = results.map(function (x) {
+            return {
+                'lat': x[0],
+                'lng': x[1]
+            };
+        });
+        console.log(locations);
+        var flightPath = new google.maps.Polyline({
+                  path: locations,
+                  geodesic: true,
+                  strokeColor: color,
+                  strokeOpacity: 0.7,
+                  strokeWeight: 4
+                });
+
+        flightPath.setMap(map);
+      }
+    </script>
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDb7dFem1IM37SVqR45acialLYe0IXcz98&callback=initMap">
+    </script>
+  </body>
+</html>
