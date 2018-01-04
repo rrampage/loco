@@ -85,7 +85,7 @@ WSGI_APPLICATION = 'loco.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
-if not DEBUG:
+if DEBUG:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -99,7 +99,7 @@ else:
             'NAME': 'loko',
             'USER': 'root',
             'PASSWORD': 'toor',
-            'HOST': 'loco.masterpeace.in',
+            'HOST': 'localhost',
             'PORT': '',
             'OPTIONS': {'charset': 'utf8mb4'},
         }

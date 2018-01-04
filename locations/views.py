@@ -12,7 +12,7 @@ from rest_framework.views import APIView
 from loco import utils
 from loco.services import cache
 
-from .filters import is_noise
+from .filters import is_noise, is_pitstop
 from .models import UserLocation
 from .serializers import UserLocationSerializer
 
@@ -99,13 +99,15 @@ def raw_user_maps(request):
     filtered_locations = []
 
     for i in range(1, len(locations)):
-        if filter_noise and not is_noise(locations[i], locations[i-1]):
-            filtered_locations.append(locations[i])
+        l = locations[i]
+        if filter_noise and not is_noise(l, locations[i-1]):
+            filtered_locations.append((l.latitude, l.longitude, l.accuracy, is_pitstop(l, locations[i-1])))
         elif not filter_noise:
-            filtered_locations.append(locations[i])
+            filtered_locations.append((l.latitude, l.longitude, l.accuracy, is_pitstop(l, locations[i-1])))
 
     len_locations = len(filtered_locations)
-    filtered_locations = json.dumps([(l.latitude, l.longitude, l.accuracy) for l in filtered_locations])
+    # filtered_locations = json.dumps([(l.latitude, l.longitude, l.accuracy) for l in filtered_locations])
+    filtered_locations = json.dumps(filtered_locations)
 
     context = {
         'locations': filtered_locations, 
