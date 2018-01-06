@@ -96,21 +96,27 @@ def raw_user_maps(request):
     filter_noise = request.GET.get('filter_noise', False)
     filter_dis = float(request.GET.get('filter_dis', 0.1))
     locations = list(UserLocation.objects.filter(user_id=uid, timestamp__gte=start, timestamp__lte=end))
-    filtered_locations = []
+    filtered_locations = [locations[0]]
 
     for i in range(1, len(locations)):
         l = locations[i]
         if filter_noise and not is_noise(l, locations[i-1]):
-            filtered_locations.append((l.latitude, l.longitude, l.accuracy, is_pitstop(l, locations[i-1])))
+            filtered_locations.append(l)
         elif not filter_noise:
-            filtered_locations.append((l.latitude, l.longitude, l.accuracy, is_pitstop(l, locations[i-1])))
+            filtered_locations.append((l.latitude, l.longitude, l.accuracy, is_pitstop(l, filtered_locations[-1])))
 
-    len_locations = len(filtered_locations)
-    # filtered_locations = json.dumps([(l.latitude, l.longitude, l.accuracy) for l in filtered_locations])
-    filtered_locations = json.dumps(filtered_locations)
+    last_location = filtered_locations[0]
+    final_locations = [(last_location.latitude, last_location.longitude, last_location.accuracy, False)]
+    for l in filtered_locations[1:]:
+        final_locations.append((l.latitude, l.longitude, l.accuracy, is_pitstop(l, last_location)))
+        last_location = l
+
+
+    len_locations = len(final_locations)
 
     context = {
-        'locations': filtered_locations, 
+        'locations': json.dumps(final_locations),
+        'filtered_locations': final_locations, 
         'len_locations': len_locations, 
     }
     return render_to_response('maps_raw.html', context)

@@ -3,7 +3,7 @@ import utils
 NOISE_TIME = 10
 NOISE_DISTANCE = 0.05
 NOISE_SPEED = 150
-NOISE_ACCURACY = 50
+NOISE_ACCURACY = 200
 
 # A user is on a pitstop if
 PITSTOP_TIME = 600 # ... time between 2 measurements is greater than 10 min
@@ -30,6 +30,11 @@ def is_noise(test_location, last_location):
 def is_pitstop(test_location, last_location):
     distance =  utils.get_distance(test_location, last_location)
     time = test_location.timestamp - last_location.timestamp
+    distance = distance - (test_location.accuracy + last_location.accuracy)/1000
+    # if distance > 2*NOISE_DISTANCE:
+    #     return False
+        
     speed = (distance*60*60)/time.total_seconds()
-    return speed < 10
+    print ((test_location.latitude, test_location.longitude, last_location.longitude, last_location.latitude, distance, time, speed))
+    return speed < 5
 
