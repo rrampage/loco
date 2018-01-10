@@ -1,5 +1,7 @@
 from math import sin, cos, sqrt, atan2, radians, degrees
-from time_aware_polyline import encode_time_aware_polyline
+import time_aware_polyline
+
+from . import polyline
 
 R = 6373.0
 
@@ -86,4 +88,19 @@ def to_polyline(locations):
         location[2].isoformat()] for location in locations
     ]
 
-    return encode_time_aware_polyline(points)
+    return time_aware_polyline.encode_time_aware_polyline(points)
+
+
+def to_rich_polyline(locations):
+    if not locations:
+        return ''
+
+    points = [
+        [location[0], 
+        location[1], 
+        location[2].isoformat(),
+        location[3].isoformat(),
+        location[4]] for location in locations
+    ]
+
+    return polyline.encode_time_aware_polyline(points)

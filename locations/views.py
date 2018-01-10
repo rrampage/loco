@@ -211,4 +211,5 @@ class UserLocationList(APIView):
             pitstops = []
 
         polyline = utils.to_polyline(filtered_locations)
-        return Response({'polyline': polyline})
+        rich_polyline = utils.to_rich_polyline(filtered_locations)
+        return Response({'polyline': polyline, 'rich_polyline': rich_polyline})
