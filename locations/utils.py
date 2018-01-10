@@ -1,6 +1,10 @@
 from math import sin, cos, sqrt, atan2, radians, degrees
+from time_aware_polyline import encode_time_aware_polyline
 
 R = 6373.0
+
+TYPE_MOVE_POINT = 0
+TYPE_STOP_POINT = 1
 
 def get_distance(loc1, loc2):
 	return get_distance_latlon(
@@ -22,18 +26,64 @@ def get_distance_latlon(point1, point2):
 
 	return R * c
 
-def get_midpoint(x1, x2, y1, y2):
-    lat1 = radians(x1)
-    lon1 = radians(x2)
-    lat2 = radians(y1)
-    lon2 = radians(y2)
+def get_midpoint(locations):
+	latitude = 0
+	longitude = 0
+	count = 0
+	for location in locations:
+		if location.accuracy<25:
+			latitude += location.latitude
+			longitude += location.longitude
+			count += 1
 
+	return[latitude/count, longitude/count, 9, True]
 
-    bx = cos(lat2) * cos(lon2 - lon1)
-    by = cos(lat2) * sin(lon2 - lon1)
-    lat3 = atan2(sin(lat1) + sin(lat2), \
-           sqrt((cos(lat1) + bx) * (cos(lat1) \
-           + bx) + by**2))
-    lon3 = lon1 + atan2(by, cos(lat1) + bx)
+def flatten_location(location):
+	if not location:
+		return
 
-    return [round(degrees(lat3), 5), round(degrees(lon3), 5)]
+	return [
+		location.latitude,
+		location.longitude,
+		location.timestamp,
+		location.timestamp,
+		TYPE_MOVE_POINT,
+		location.accuracy
+	]
+
+def aggregate_stop_points(locations):
+	if not locations:
+		return
+
+	latitude = 0
+	longitude = 0
+	accuracy = 0
+	count = 0
+	start_time = locations[0][2]
+	end_time = locations[0][3]
+
+	for location in locations:
+		if start_time > location[2]:
+			start_time = location[2]
+		if end_time < location[3]:
+			end_time = location[3]
+
+		if location[5]<25:
+			latitude += location[0]
+			longitude += location[1]
+			accuracy += location[5]
+			count += 1
+
+	return[latitude/count, longitude/count, start_time, end_time, TYPE_STOP_POINT, accuracy/count]
+
+def to_polyline(locations):
+    if not locations:
+        return ''
+
+    points = [
+        [location[0], 
+        location[1], 
+        location[2].isoformat()] for location in locations
+    ]
+
+    return encode_time_aware_polyline(points)

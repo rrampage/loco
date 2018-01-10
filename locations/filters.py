@@ -38,5 +38,5 @@ def is_pitstop(test_location, last_location):
         
     speed = (distance*60*60)/time.total_seconds()
     print ((test_location.latitude, test_location.longitude, last_location.longitude, last_location.latitude, distance, time, speed))
-    return speed < 4
+    return speed < 3
 

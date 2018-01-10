@@ -9,13 +9,13 @@ from rest_framework.response import Response
 from rest_framework import permissions, status
 from rest_framework.views import APIView
 
-from loco import utils
+from loco import utils as loco_utils
 from loco.services import cache
 
+from . import utils
 from .filters import is_noise, is_pitstop
 from .models import UserLocation
 from .serializers import UserLocationSerializer
-from .utils import get_midpoint
 
 from accounts.models import User
 from teams.models import Team, TeamMembership
@@ -109,21 +109,30 @@ def raw_user_maps(request):
     last_location = filtered_locations[0]
     last_valid_location = filtered_locations[0]
     final_locations = [(last_location.latitude, last_location.longitude, last_location.accuracy, False, 0)]
+    pitstops = []
     for l in filtered_locations[1:]:
         if is_pitstop(l, last_location):
-            if l.accuracy < 25:
-                last_valid_location = final_locations.pop()
-                if last_valid_location[2] > 25:
-                    final_locations.append((l.latitude, l.longitude, l.accuracy, False, 0))
-                else:
-                    midpoint = get_midpoint(l.latitude, l.longitude, last_valid_location[0], last_valid_location[1])
-                    final_locations.append((midpoint[0], midpoint[1], l.accuracy, True, last_valid_location[4]+1))
+            # if l.accuracy < 25:
+            # if not pitstops:
+            #     pitstops.append(final_locations.pop())
+
+            pitstops.append(l)
+                # last_valid_location = final_locations[-1]
+                # if last_valid_location[2] > 25:
+                #     final_locations.append((l.latitude, l.longitude, l.accuracy, False, 0))
+                # else:
+                #     midpoint = utils.get_midpoint(l.latitude, l.longitude, last_valid_location[0], last_valid_location[1], last_valid_location[4])
+                #     final_locations.append((midpoint[0], midpoint[1], l.accuracy, True, last_valid_location[4]+1))
             pass
             # if l.accuracy < 25:
-            #     midpoint = get_midpoint(l.latitude, l.longitude, last_valid_location.latitude, last_valid_location.longitude)
+            #     midpoint = utils.get_midpoint(l.latitude, l.longitude, last_valid_location.latitude, last_valid_location.longitude)
             #     # final_locations.append((l.latitude, l.longitude, l.accuracy, True))
             #     final_locations.append((midpoint[0], midpoint[1], l.accuracy, True))
         else:
+            if pitstops:
+                final_locations.append(utils.get_midpoint(pitstops))
+                pitstops = []
+                
             final_locations.append((l.latitude, l.longitude, l.accuracy, False, 0))
         last_location = l
 
@@ -165,14 +174,16 @@ class UserLocationList(APIView):
         membership = get_object_or_404(TeamMembership, team=team_id, user=user_id)
         self.check_object_permissions(self.request, membership)
 
-        date = utils.get_query_date(request, datetime.now().date())
+        date = loco_utils.get_query_date(request, datetime.now().date())
         user = membership.user
         locations = user.userlocation_set.filter(timestamp__date=date)
         if not locations:
             return Response({'polyline': ''})
 
-        filtered_locations = [locations[0]]
+        first_location = utils.flatten_location(locations[0])
+        filtered_locations = [first_location]
         last_valid_location = locations[0]
+        pitstops = []
         for i in range(1, len(locations)):
             test_location = locations[i]
             last_location = locations[i-1]
@@ -180,10 +191,24 @@ class UserLocationList(APIView):
             if is_noise(test_location, last_location):
                 continue
 
-            if not is_pitstop(test_location, last_valid_location):
-                filtered_locations.append(test_location)
+            if is_pitstop(test_location, last_valid_location):
+                if not pitstops:
+                    pitstops.append(filtered_locations.pop())
+
+                pitstops.append(utils.flatten_location(test_location))
+            else:
+                if pitstops:
+                    midpoint = utils.aggregate_stop_points(pitstops)
+                    filtered_locations.append(midpoint)
+                    pitstops = []
+                filtered_locations.append(utils.flatten_location(test_location))
             
             last_valid_location = test_location
+
+        if pitstops:
+            midpoint = utils.aggregate_stop_points(pitstops)
+            filtered_locations.append(midpoint)
+            pitstops = []
 
         polyline = utils.to_polyline(filtered_locations)
         return Response({'polyline': polyline})
