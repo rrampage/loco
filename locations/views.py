@@ -156,7 +156,9 @@ class LocationSubscriptionList(APIView):
         users = team.members.filter(id__in=user_ids)
         subscribe_location(request.user, users)
         locations = cache.get_users_last_location([u.id for u in users])
-        locations = [l for l in locations if l]
+        if locations:
+            locations = [l for l in locations if l]
+            
         return Response(locations)
 
     def delete(self, request, team_id, format=None):
