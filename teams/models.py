@@ -93,7 +93,7 @@ class Team(BaseModel):
                 attendance = user.attendance_set.filter(timestamp__date=date)
                 checkins = user.checkin_set.filter(timestamp__date=date)
                 location_events = user.locationstatus_set.filter(timestamp__date=date)
-                phone_events = user.phonestatus_set.filter(timestamp__date=date)
+                # phone_events = user.phonestatus_set.filter(timestamp__date=date)
 
             events = list(attendance) + list(checkins) + list(location_events) + list(phone_events)
             return self._sort_events(events)
@@ -115,7 +115,7 @@ class Team(BaseModel):
                 attendance = user.attendance_set.all().order_by('-timestamp')[0:start+limit]
                 checkins = user.checkin_set.all().order_by('-timestamp')[0:start+limit]
                 location_events = user.locationstatus_set.all().order_by('-timestamp')[0:start+limit]
-                phone_events = user.phonestatus_set.all().order_by('-timestamp')[0:start+limit]
+                # phone_events = user.phonestatus_set.all().order_by('-timestamp')[0:start+limit]
 
             events = list(attendance) + list(checkins) + list(location_events) + list(phone_events)
             events = self._sort_events(events)
