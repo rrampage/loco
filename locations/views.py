@@ -197,7 +197,7 @@ class UserLocationList(APIView):
                 continue
 
             if is_pitstop(test_location, last_valid_location):
-                if not pitstops:
+                if not pitstops and filtered_locations:
                     pitstops.append(filtered_locations.pop())
 
                 pitstops.append(utils.flatten_location(test_location))
