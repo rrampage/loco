@@ -86,8 +86,8 @@ def aggregate_stop_points(locations):
 
     if count < 5 or end_time-start_time < timedelta(minutes=10):
         return [latitude/count, longitude/count, start_time, start_time, TYPE_MOVE_POINT, accuracy/count]
-        
-    return [latitude/count, longitude/count, start_time, start_time, TYPE_STOP_POINT, accuracy/count]
+
+    return [latitude/count, longitude/count, start_time, end_time, TYPE_STOP_POINT, accuracy/count]
 
 def to_polyline(locations):
     if not locations:
