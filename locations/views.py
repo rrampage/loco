@@ -173,11 +173,11 @@ class LocationSubscriptionList(APIView):
         return Response()
 
 class UserLocationList(APIView):
-    permission_classes = (permissions.IsAuthenticated, IsAdminOrMe)
+    # permission_classes = (permissions.IsAuthenticated, IsAdminOrMe)
 
     def get(self, request, team_id, user_id, format=None):
         membership = get_object_or_404(TeamMembership, team=team_id, user=user_id)
-        self.check_object_permissions(self.request, membership)
+        # self.check_object_permissions(self.request, membership)
 
         date = loco_utils.get_query_date(request, datetime.now().date())
         user = membership.user
@@ -186,7 +186,7 @@ class UserLocationList(APIView):
             return Response({'polyline': ''})
 
         first_location = utils.flatten_location(locations[0])
-        filtered_locations = [first_location]
+        filtered_locations = []
         last_valid_location = locations[0]
         pitstops = []
         for i in range(1, len(locations)):
