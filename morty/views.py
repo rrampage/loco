@@ -18,7 +18,6 @@ from accounts.models import User
 from accounts.serializers import UserSerializer
 from teams.models import Team, Message
 from teams.serializers import TeamMembershipSerializer, MessageSerializer
-from notifications.tasks import send_gcm_async
 
 def _clean_ping_data(ping_data):
     result = {}
@@ -115,15 +114,3 @@ class MessageList(APIView):
             return Response(status=201)
 
         return Response(data=serializer.errors, status=400)   
-
-
-@api_view(['POST'])
-@permission_classes((permissions.IsAuthenticated, IsSuperUser))
-def send_user_gcm(request, user_id, format=None):
-    user = get_object_or_404(User, id=user_id)
-    data = request.data
-    if data:
-        send_gcm_async.delay(user.gcm_token, data)
-        return Response()
-
-    return Response(status=400)

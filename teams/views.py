@@ -18,6 +18,7 @@ from .permissions import IsTeamMember, IsAdminOrReadOnly, IsAdmin, IsMe
 
 from accounts.models import User
 from accounts.serializers import UserSerializer
+from notifications.tasks import send_checkin_gcm_async
 
 class TeamList(APIView):
     permission_classes = (permissions.IsAuthenticated, )
@@ -176,6 +177,7 @@ class CheckinList(APIView):
             checkin = serializer.save(team=team, user=request.user)
             media = request.data.get('media')
             self.add_media(checkin, media)
+            send_checkin_gcm_async.delay(checkin.id)
             return Response(serializer.data)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
