@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework import permissions, status
 from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
+from rest_framework.parsers import MultiPartParser, FormParser
 
 from loco import utils
 
@@ -86,10 +87,10 @@ def logout_user(request, format=None):
 
 class UserMeDetail(APIView):
     permission_classes = (permissions.IsAuthenticated,)
+    parser_classes = (FormParser, MultiPartParser)
 
     def put(self, request, format=None):
-        serializer = UserSerializer(request.user, data=request.data)
-        
+        serializer = UserSerializer(request.user, data=request.data)        
         if serializer.is_valid():
             serializer.save()
             return Response(data=serializer.data)
