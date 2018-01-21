@@ -1,16 +1,33 @@
 import requests, json
+from  oauth2client.service_account import ServiceAccountCredentials
+
 from teams.models import Checkin, TeamMembership
 
+url = 'https://fcm.googleapis.com/v1/projects/bd-tracker/messages:send'
 
-url = 'https://gcm-http.googleapis.com/gcm/send'
-AUTHKEY = 'AIzaSyD2NUwHvqbAlE-7IAqoEBu_YhV0HEjVJ_w'
-headers = {'Content-Type': 'application/json', 'Authorization': 'key='+AUTHKEY}
+def _get_access_token():
+  credentials = ServiceAccountCredentials.from_json_keyfile_name(
+      '../keys/service.json', 'https://www.googleapis.com/auth/firebase.messaging')
+  access_token_info = credentials.get_access_token()
+  return access_token_info.access_token
 
+
+headers = {
+  'Authorization': 'Bearer ' + _get_access_token(),
+  'Content-Type': 'application/json; UTF-8',
+}
 
 def send_gcm(gcm_token, message):
-	data = {'data': message,
-		'to': gcm_token
+	data= {
+	  	"message":{
+	    "token" : gcm_token,
+	    "notification" : {
+	      "body" : "",
+	      "title" : message,
+	      }
+	   }
 	}
+
 	res = requests.post(url, headers=headers, json=data)
 	if res.status_code >= 400:
 		raise Exception("GCMError")
