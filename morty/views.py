@@ -18,6 +18,7 @@ from accounts.models import User
 from accounts.serializers import UserSerializer
 from teams.models import Team, Message
 from teams.serializers import TeamMembershipSerializer, MessageSerializer
+from notifications.tasks import send_chat_gcm_async
 
 def _clean_ping_data(ping_data):
     result = {}
@@ -110,7 +111,8 @@ class MessageList(APIView):
             serializer = MessageSerializer(data=message_data)
 
         if serializer.is_valid():
-            serializer.save()
+            message = serializer.save()
+            send_chat_gcm_async.delay(message.target.gcm_token)
             return Response(status=201)
 
         return Response(data=serializer.errors, status=400)   
