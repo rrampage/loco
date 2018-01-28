@@ -27,6 +27,8 @@ def _clean_ping_data(ping_data):
             continue
         elif key=='user':
             result[key] = ping_data['user'].id
+        elif key=='team':
+            result[key] = ping_data['team'].id
         else:
             result[key] = str(ping_data[key])
     return result

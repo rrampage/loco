@@ -161,7 +161,7 @@ class TeamMembership(BaseModel):
 
 class Checkin(BaseLocationModel):
     team = models.ForeignKey(Team, on_delete=models.DO_NOTHING)
-    description = models.TextField()
+    description = models.TextField(blank=True)
 
 def checkin_media_path(instance, filename):
     return 'teams/{0}/users/{1}/checkins/{2}/{3}'.format(

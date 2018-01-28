@@ -5,6 +5,7 @@ from django.conf import settings
 from django.utils import timezone
 from locations.models import LocationStatus, PhoneStatus
 from accounts.models import User
+from teams.models import Team
 
 CACHE_LOCATION = 'loco.masterpeace.in'
 CACHE_PORT = 6174
@@ -31,9 +32,12 @@ def _hydrate_user(ping_data):
     if not ping_data:
         return {}
 
-    if 'user' in ping_data:
+    if 'user' in ping_data and not isinstance(ping_data['user'], User):
         user_id = ping_data['user']
         ping_data['user'] = User.objects.get(id=user_id)
+    if 'team' in ping_data and not isinstance(ping_data['team'], Team):
+        team_id = ping_data['team']
+        ping_data['team'] = Team.objects.get(id=team_id)
 
     return ping_data
 
@@ -92,17 +96,16 @@ def set_user_ping(user_id, new_ping):
     if not user_id or not new_ping:
         return
     
+    last_ping = get_user_ping(user_id)
     key = KEY_PING + str(user_id)
     cache.set(key, pickle.dumps(new_ping))
-
-    last_ping = get_user_ping(user_id)
     if not last_ping:
         return
 
     last_ping_time = parse(last_ping.get('timestamp'))
-    if timezone.now() - last_ping_time > timedelta(minutes=10):
-        PhoneStatus.objects.create(action_type=PhoneStatus.ACTION_OFF, **_hydrate_user(last_ping))
-        PhoneStatus.objects.create(action_type=PhoneStatus.ACTION_ON, **_hydrate_user(new_ping))
+    # if timezone.now() - last_ping_time > timedelta(minutes=10):
+    #     PhoneStatus.objects.create(action_type=PhoneStatus.ACTION_OFF, **_hydrate_user(last_ping))
+    #     PhoneStatus.objects.create(action_type=PhoneStatus.ACTION_ON, **_hydrate_user(new_ping))
 
     current_location_status = get_user_location_status(user_id)
     if new_ping.get('latitude') == '0.0' and current_location_status != 'False':
