@@ -83,14 +83,11 @@ class TeamMembershipList(APIView):
 
         user = User.objects.get_or_create_dummy(phone)
         membership = team.add_member(user, request.user)
-
-        #Notifiy User
-
         if membership:
             serializer = TeamMembershipSerializer(membership)
             return Response(serializer.data)
 
-        return Response(data={"errors": "Membership exists"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response()
 
 class TeamMembershipDetail(APIView):
     permission_classes = (permissions.IsAuthenticated, IsAdmin)
