@@ -87,7 +87,7 @@ class TeamMembershipList(APIView):
             serializer = TeamMembershipSerializer(membership)
             return Response(serializer.data)
 
-        return Response()
+        return Response({})
 
 class TeamMembershipDetail(APIView):
     permission_classes = (permissions.IsAuthenticated, IsAdmin)
