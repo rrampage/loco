@@ -157,7 +157,10 @@ class LocationSubscriptionList(APIView):
         team = get_object_or_404(Team, id=team_id)
         self.check_object_permissions(self.request, team)
         user_ids = request.data.get('user_ids', [])
-        memberships = TeamMembership.objects.filter(team=team, status=team_constants.STATUS_ACCEPTED)
+        memberships = TeamMembership.objects.filter(
+            team=team, 
+            status=team_constants.STATUS_ACCEPTED,
+            user__id__in=user_ids)
         users = [m.user for m in memberships]
         subscribe_location(request.user, users)
         locations = cache.get_users_last_location([u.id for u in users])
