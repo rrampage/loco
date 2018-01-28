@@ -121,7 +121,7 @@ def set_last_known_location(user_id, location_data):
 
 def get_users_last_location(user_ids):
     if not user_ids:
-        return 
+        return []
 
     keys = [KEY_LAST_LOCATION+str(id) for id in user_ids]
     rows = cache.mget(keys)

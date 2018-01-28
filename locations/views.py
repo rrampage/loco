@@ -20,6 +20,7 @@ from .serializers import UserLocationSerializer
 from accounts.models import User
 from teams.models import Team, TeamMembership
 from teams.permissions import IsTeamMember, IsAdminOrReadOnly, IsAdminOrMe
+from teams import constants as team_constants
 from morty.services import subscribe_location, unsubscribe_location
 
 def get_snapped_mp(locations, loc_type):
@@ -156,7 +157,8 @@ class LocationSubscriptionList(APIView):
         team = get_object_or_404(Team, id=team_id)
         self.check_object_permissions(self.request, team)
         user_ids = request.data.get('user_ids', [])
-        users = team.members.filter(id__in=user_ids)
+        memberships = TeamMembership.objects.filter(team=team, status=team_constants.STATUS_ACCEPTED)
+        users = [m.user for m in memberships]
         subscribe_location(request.user, users)
         locations = cache.get_users_last_location([u.id for u in users])
         if locations:
@@ -173,11 +175,11 @@ class LocationSubscriptionList(APIView):
         return Response()
 
 class UserLocationList(APIView):
-    # permission_classes = (permissions.IsAuthenticated, IsAdminOrMe)
+    permission_classes = (permissions.IsAuthenticated, IsAdminOrMe)
 
     def get(self, request, team_id, user_id, format=None):
         membership = get_object_or_404(TeamMembership, team=team_id, user=user_id)
-        # self.check_object_permissions(self.request, membership)
+        self.check_object_permissions(self.request, membership)
 
         date = loco_utils.get_query_date(request, datetime.now().date())
         user = membership.user
