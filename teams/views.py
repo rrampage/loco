@@ -42,8 +42,11 @@ class TeamDetail(APIView):
     def get(self, request, team_id, format=None):
         team = get_object_or_404(Team, id=team_id)
         self.check_object_permissions(self.request, team)
-        serializer = TeamSerializer(team)
-        return Response(data=serializer.data)
+        data = TeamSerializer(team).data
+        if team.is_admin(request.user):
+            data['code'] = team.code
+            
+        return Response(data=data)
 
     def put(self, request, team_id, format=None):
         team = get_object_or_404(Team, id=team_id)
