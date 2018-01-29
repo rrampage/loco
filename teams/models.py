@@ -29,7 +29,7 @@ class Team(BaseModel):
         through='TeamMembership',
         through_fields=('team', 'user'),
     )
-    code = models.CharField(max_length=10, default=get_team_code)
+    code = models.CharField(max_length=10, default=get_team_code, unique=True)
 
     def save(self, *args, **kwargs):
         newly_created = True
