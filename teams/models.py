@@ -8,6 +8,8 @@ from loco.models import BaseModel, BaseLocationModel
 
 from . import constants
 
+def _get_team_code():
+    return str(uuid.uuid4())[:6]
 
 class Team(BaseModel):
     name = models.CharField(max_length=60)
@@ -19,6 +21,7 @@ class Team(BaseModel):
         through='TeamMembership',
         through_fields=('team', 'user'),
     )
+    code = models.CharField(max_length=10, default=_get_team_code, unique=True)
 
     def save(self, *args, **kwargs):
         newly_created = True
