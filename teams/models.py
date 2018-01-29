@@ -1,4 +1,4 @@
-import uuid
+import uuid, random
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.conf import settings
@@ -8,8 +8,16 @@ from loco.models import BaseModel, BaseLocationModel
 
 from . import constants
 
+
+_CODE_BASE = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
+
 def _get_team_code():
-    return str(uuid.uuid4())[:6]
+    code = ''
+    secure_random = random.SystemRandom()
+    for i in range(6):
+        code += secure_random.choice(_CODE_BASE)
+
+    return code
 
 class Team(BaseModel):
     name = models.CharField(max_length=60)
