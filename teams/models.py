@@ -11,7 +11,7 @@ from . import constants
 
 _CODE_BASE = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
 
-def _get_team_code():
+def get_team_code():
     code = ''
     secure_random = random.SystemRandom()
     for i in range(6):
@@ -29,7 +29,7 @@ class Team(BaseModel):
         through='TeamMembership',
         through_fields=('team', 'user'),
     )
-    code = models.CharField(max_length=10, default=_get_team_code, unique=True)
+    code = models.CharField(max_length=10, default=get_team_code)
 
     def save(self, *args, **kwargs):
         newly_created = True

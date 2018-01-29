@@ -16,6 +16,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='team',
             name='code',
-            field=models.CharField(default=teams.models._get_team_code, max_length=10, unique=True),
+            field=models.CharField(default=teams.models.get_team_code, max_length=10),
         ),
     ]
