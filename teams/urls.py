@@ -9,6 +9,7 @@ urlpatterns = [
 	url(r'^$', views.TeamList.as_view()),
 	url(r'^(?P<team_id>[0-9]+)/$', views.TeamDetail.as_view()),
 	url(r'^(?P<team_id>[0-9]+)/chats/$', views.get_chats),
+	url(r'^(?P<team_id>[0-9]+)/join/$', views.join_team),
 	url(r'^(?P<team_id>[0-9]+)/status/$', views.TeamMembershipStatus.as_view()),
 	url(r'^(?P<team_id>[0-9]+)/members/$', views.TeamMembershipList.as_view()),
 	url(r'^(?P<team_id>[0-9]+)/members/(?P<user_id>[0-9]+)/$', views.TeamMemberDetail.as_view()),

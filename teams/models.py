@@ -64,6 +64,24 @@ class Team(BaseModel):
                 status = constants.STATUS_INVITED
             )
 
+    def join_team(self, user, code):
+        if self.code != code:
+            return False
+
+        membership = TeamMembership.objects.filter(team=self, user=user)
+        if not membership.exists():
+            membership = TeamMembership.objects.create(
+                team = self,
+                user = user,
+                created_by = user,
+                role = TeamMembership.ROLE_MEMBER,
+                status = constants.STATUS_INVITED
+            )
+        else:
+            membership = membership[0]
+
+        return membership
+
     def get_chat_members(self, user):
         try:
             membership = TeamMembership.objects.get(user=user, team=self)

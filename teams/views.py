@@ -89,6 +89,18 @@ class TeamMembershipList(APIView):
 
         return Response({})
 
+
+@api_view(['PUT'])
+@permission_classes((permissions.IsAuthenticated,))
+def join_team(request, team_id, format=None):
+    team = get_object_or_404(Team, id=team_id)
+    membership = team.join_team(request.user, request.data.get('code'))
+    if membership:
+        serializer = TeamMembershipSerializer(membership)
+        return Response(serializer.data)
+
+    return Response(status=status.HTTP_400_BAD_REQUEST)
+
 class TeamMembershipDetail(APIView):
     permission_classes = (permissions.IsAuthenticated, IsAdmin)
 
