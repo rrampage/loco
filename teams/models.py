@@ -55,25 +55,12 @@ class Team(BaseModel):
             team=self, user=user, role=TeamMembership.ROLE_ADMIN).exists()
 
     def add_member(self, user, created_by):
-        if not self.is_member(user):
-            return TeamMembership.objects.create(
-                team = self,
-                user = user,
-                created_by = created_by,
-                role = TeamMembership.ROLE_MEMBER,
-                status = constants.STATUS_INVITED
-            )
-
-    def join_team(self, user, code):
-        if self.code != code:
-            return False
-
         membership = TeamMembership.objects.filter(team=self, user=user)
         if not membership.exists():
             membership = TeamMembership.objects.create(
                 team = self,
                 user = user,
-                created_by = user,
+                created_by = created_by,
                 role = TeamMembership.ROLE_MEMBER,
                 status = constants.STATUS_INVITED
             )

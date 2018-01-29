@@ -95,9 +95,9 @@ class TeamMembershipList(APIView):
 
 @api_view(['PUT'])
 @permission_classes((permissions.IsAuthenticated,))
-def join_team(request, team_id, format=None):
-    team = get_object_or_404(Team, id=team_id)
-    membership = team.join_team(request.user, request.data.get('code'))
+def join_team(request, format=None):
+    team = get_object_or_404(Team, code=request.data.get('code'))
+    membership = team.add_member(request.user, request.user)
     if membership:
         serializer = TeamMembershipSerializer(membership)
         return Response(serializer.data)
