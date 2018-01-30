@@ -110,7 +110,7 @@ class TeamMembershipDetail(APIView):
     def put(self, request, membership_id, format=None):
         membership = get_object_or_404(TeamMembership, id=membership_id)
         self.check_object_permissions(self.request, membership)
-        serializer = TeamMembershipSerializer(membership, data=request.data)
+        serializer = TeamMembershipSerializer(membership, data=request.data, partial=True)
         
         if serializer.is_valid():
             serializer.save()

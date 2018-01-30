@@ -19,7 +19,7 @@ from .serializers import UserLocationSerializer
 
 from accounts.models import User
 from teams.models import Team, TeamMembership
-from teams.permissions import IsTeamMember, IsAdminOrReadOnly, IsAdminOrMe
+from teams.permissions import IsTeamMember, IsAdminOrReadOnly, IsAdminOrMe, IsAdminManagerOrReadOnly
 from teams import constants as team_constants
 from morty.services import subscribe_location, unsubscribe_location
 
@@ -151,7 +151,7 @@ def raw_user_maps(request):
     return render_to_response('maps_raw.html', context)
 
 class LocationSubscriptionList(APIView):
-    permission_classes = (permissions.IsAuthenticated, IsTeamMember, IsAdminOrReadOnly)
+    permission_classes = (permissions.IsAuthenticated, IsTeamMember, IsAdminManagerOrReadOnly)
 
     def put(self, request, team_id, format=None):
         team = get_object_or_404(Team, id=team_id)
@@ -161,6 +161,10 @@ class LocationSubscriptionList(APIView):
             team=team, 
             status=team_constants.STATUS_ACCEPTED,
             user__id__in=user_ids)
+        if request.user.teammembership_set.get(team=team).role==TeamMembership.ROLE_MANAGER:
+            memberships = [m for m in memberships 
+            if m.role==TeamMembership.ROLE_MEMBER or m.user.id==request.user.id]
+
         users = [m.user for m in memberships]
         subscribe_location(request.user, users)
         locations = cache.get_users_last_location([u.id for u in users])

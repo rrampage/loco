@@ -54,6 +54,10 @@ class Team(BaseModel):
         return TeamMembership.objects.filter(
             team=self, user=user, role=TeamMembership.ROLE_ADMIN).exists()
 
+    def is_manager(self, user):
+        return TeamMembership.objects.filter(
+            team=self, user=user, role=TeamMembership.ROLE_MANAGER).exists()
+
     def add_member(self, user, created_by):
         membership = TeamMembership.objects.filter(team=self, user=user)
         if not membership.exists():
@@ -74,6 +78,8 @@ class Team(BaseModel):
             membership = TeamMembership.objects.get(user=user, team=self)
             if membership.role == TeamMembership.ROLE_ADMIN:
                 return TeamMembership.objects.filter(team=self).exclude(user=user)
+            elif membership.role == TeamMembership.ROLE_MANAGER:
+                return TeamMembership.objects.filter(team=self, role=TeamMembership.ROLE_MEMBER)
             elif membership.role == TeamMembership.ROLE_MEMBER:
                 return TeamMembership.objects.filter(team=self, role=TeamMembership.ROLE_ADMIN)
         except ObjectDoesNotExist:

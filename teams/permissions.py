@@ -12,7 +12,15 @@ class IsAdminOrReadOnly(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
 
-    	return obj.is_admin(request.user)
+        return obj.is_admin(request.user)
+    
+class IsAdminManagerOrReadOnly(permissions.BasePermission):
+
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+
+        return obj.is_admin(request.user) or obj.is_manager(request.user)
     
 class IsAdminOrMe(permissions.BasePermission):
 
