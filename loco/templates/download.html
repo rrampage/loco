@@ -4,11 +4,11 @@
     <body>
         <script type=text/javascript>
             try{
-              window.location = "{{ url; }}";
-              setTimeout("window.location = '{{ web_redirect_to; }}';", 1000);
+              window.location = "{{ url }}";
+              setTimeout("window.location = '{{ web_redirect_to }}';", 1000);
             }
             catch(e){
-              window.location = "{{ web_redirect_to; }}";
+              window.location = "{{ web_redirect_to }}";
             }
           </script>
     </body>
