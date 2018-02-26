@@ -3,6 +3,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponseRedirect
+from django.shortcuts import render_to_response
 
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
@@ -159,13 +160,17 @@ class UserDumpView(APIView):
 def get_download_link(request):
     PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.loco.tracker&referrer='
 
-    team_id = request.GET.get('team')
-    if not team_id:
+    code = request.GET.get('code')
+    if not code:
         return HttpResponseRedirect(PLAY_STORE_URL)
 
     referrer = 'utm_source%3DApp%26utm_medium%3Dinvite%26utm_campaign%3DteamGrowth%26' + \
-                'team_id%3D' + str(team_id) + '%26referrer_user%3D0'
+                'invite_code%3D' + str(code) + '%26referrer_user%3D0'
     final_url = PLAY_STORE_URL + referrer
 
-    return HttpResponseRedirect(final_url)
+    context = {
+        'url': 'loco://join?code=' + str(code),
+        'web_redirect_to': final_url, 
+    }
+    return render_to_response('download.html', context)
 
