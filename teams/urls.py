@@ -2,7 +2,8 @@ from django.conf.urls import url, include
 from rest_framework.urlpatterns import format_suffix_patterns
 
 from . import views
-from locations import views as location_views 
+from locations import views as location_views
+from groups import views as groups_views
 
 
 urlpatterns = [
@@ -22,6 +23,7 @@ urlpatterns = [
     url(r'^(?P<team_id>[0-9]+)/media/checkins$', views.checkin_media_upload),
 	url(r'^(?P<team_id>[0-9]+)/subscriptions/$', location_views.LocationSubscriptionList.as_view()),
 	url(r'^(?P<team_id>[0-9]+)/threads/(?P<thread_id>.+)$', views.MessagesList.as_view()),
+	url(r'^(?P<team_id>[0-9]+)/groups/$', groups_views.GroupList.as_view()),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)
