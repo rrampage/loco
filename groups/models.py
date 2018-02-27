@@ -3,7 +3,7 @@ from django.conf import settings
 
 from loco.models import BaseModel
 
-from teams.models import Team
+from teams.models import Team, TeamMembership
 
 def group_photo_path(instance, filename):
     return 'groups/{0}/photos/{1}'.format(instance.id, filename)
@@ -23,7 +23,7 @@ class Group(BaseModel):
     def add_member(self, user, created_by, role=''):
         if not role:
             role = GroupMembership.ROLE_MEMBER
-            
+
         membership = GroupMembership.objects.filter(group=self, user=user)
         if not membership.exists():
             membership = GroupMembership.objects.create(
@@ -48,6 +48,23 @@ class Group(BaseModel):
             self.add_member(self.created_by,
                 self.created_by, GroupMembership.ROLE_ADMIN)
 
+    def add_members(self, user_ids, created_by):
+        if not user_ids or not created_by:
+            return
+
+        team_memberships = TeamMembership.objects.filter(
+            user__id__in=user_ids, team=self.team)
+
+        if not team_memberships:
+            return
+
+        group_memberships = []
+        for team_member in team_memberships:
+            user = team_member.user
+            membership = self.add_member(user, created_by)
+            group_memberships.append(membership)
+
+        return group_memberships
 
     def is_member(self, user):
         return GroupMembership.objects.filter(group=self, user=user).exists()

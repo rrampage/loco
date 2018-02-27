@@ -15,8 +15,7 @@ host = CACHE_LOCATION
 port = CACHE_PORT
 db = CACHE_DB
 pool = redis.ConnectionPool(host=host, port=port, db=db, password="lokopass")
-if not settings.DEBUG:
-    cache = redis.Redis(connection_pool=pool)
+cache = redis.Redis(connection_pool=pool)
 
 KEY_PING = "ping_"
 KEY_LAST_LOCATION = "last_location_"
@@ -74,6 +73,9 @@ def get_user_status(user_id):
     return USER_STATUS_SIGNEDIN
 
 def set_user_signin_status(user_id, status):
+    if not settings.DEBUG:
+        raise Exception("Cannot use cache in developement")
+
     if not user_id:
         return
         
@@ -81,6 +83,9 @@ def set_user_signin_status(user_id, status):
     cache.hset(key, KEY_STATUS_SIGNIN, status)
 
 def set_user_location_status(user_id, status):
+    if not settings.DEBUG:
+        raise Exception("Cannot use cache in developement")
+
     if not user_id:
         return
         
@@ -95,6 +100,9 @@ def get_user_location_status(user_id):
     return cache.hget(key, KEY_STATUS_LOCATION)
 
 def set_user_ping(user_id, new_ping):
+    if not settings.DEBUG:
+        raise Exception("Cannot use cache in developement")
+
     if not user_id or not new_ping:
         return
     
@@ -118,6 +126,9 @@ def set_user_ping(user_id, new_ping):
         LocationStatus.objects.create(action_type=LocationStatus.ACTION_ON, **_hydrate_user(new_ping))
 
 def set_last_known_location(user_id, location_data):
+    if not settings.DEBUG:
+        raise Exception("Cannot use cache in developement")
+
     if not user_id or not location_data:
         return
         
@@ -147,6 +158,9 @@ def get_user_last_location(user_id):
         return last_location
 
 def set_group_members(group_id, members):
+    if not settings.DEBUG:
+        raise Exception("Cannot use cache in developement")
+        
     if not group_id or not members:
         return
 

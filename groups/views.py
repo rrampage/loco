@@ -10,18 +10,29 @@ from .serializers import GroupSerializer, GroupMembershipSerializer
 from .permissions import IsGroupMember, IsGroupAdminOrReadOnly, CanAlterGroupMembership
 
 from accounts.models import User
-from teams.models import Team
+from teams.models import Team, TeamMembership
 from teams import permissions as team_permissions
 
 class GroupList(APIView):
     permission_classes = (permissions.IsAuthenticated, team_permissions.IsTeamMember)
+
+    def add_members(self, request, group):
+        user_ids = request.data.get('members')
+        if not user_ids:
+            return
+
+        if not isinstance(user_ids, list):
+            user_ids = [user_ids]
+
+        group.add_members(user_ids, request.user)
 
     def post(self, request, team_id, format=None):
     	team = get_object_or_404(Team, id=team_id)
         self.check_object_permissions(self.request, team)
         serializer = GroupSerializer(data=request.data)
         if serializer.is_valid():
-            Group = serializer.save(created_by=request.user, team=team)
+            group = serializer.save(created_by=request.user, team=team)
+            self.add_members(request, group)
             return Response(serializer.data)
 
         return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -65,15 +76,14 @@ class GroupMembershipList(APIView):
     def post(self, request, group_id, format=None):
         group = get_object_or_404(Group, id=group_id)
         self.check_object_permissions(self.request, group)
-        user_id = request.data.get('user')
-        user = get_object_or_404(User, id=user_id)
-        if not group.team.is_member(user):
-        	return Response(status=status.HTTP_400_BAD_REQUEST)
+        user_ids = request.data.get('members')
+        if not isinstance(user_ids, list):
+            user_ids = [user_ids]
 
-        membership = group.add_member(user, request.user)
-        if membership:
+        group_memberships = group.add_members(user_ids, request.user)
+        if group_memberships:
             update_group_members_async.delay(group_id)
-            serializer = GroupMembershipSerializer(membership)
+            serializer = GroupMembershipSerializer(group_memberships, many=True)
             return Response(serializer.data)
 
         return Response({})
