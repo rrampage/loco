@@ -5,6 +5,7 @@ from rest_framework import permissions, status
 from rest_framework.views import APIView
 
 from .models import Group, GroupMembership
+from .tasks import update_group_members_async
 from .serializers import GroupSerializer, GroupMembershipSerializer
 from .permissions import IsGroupMember, IsGroupAdminOrReadOnly, CanAlterGroupMembership
 
@@ -71,6 +72,7 @@ class GroupMembershipList(APIView):
 
         membership = group.add_member(user, request.user)
         if membership:
+            update_group_members_async.delay(group_id)
             serializer = GroupMembershipSerializer(membership)
             return Response(serializer.data)
 
@@ -93,5 +95,7 @@ class GroupMembershipDetail(APIView):
     def delete(self, request, group_id, membership_id, format=None):
         membership = get_object_or_404(GroupMembership, id=membership_id)
         self.check_object_permissions(self.request, membership)
+        group_id = membership.group.id
         membership.delete()
+        update_group_members_async.delay(group_id)
         return Response(status=204)

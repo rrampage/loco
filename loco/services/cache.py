@@ -15,13 +15,15 @@ host = CACHE_LOCATION
 port = CACHE_PORT
 db = CACHE_DB
 pool = redis.ConnectionPool(host=host, port=port, db=db, password="lokopass")
-cache = redis.Redis(connection_pool=pool)
+if not settings.DEBUG:
+    cache = redis.Redis(connection_pool=pool)
 
 KEY_PING = "ping_"
 KEY_LAST_LOCATION = "last_location_"
 KEY_STATUS = "status_"
 KEY_STATUS_SIGNIN = "signin"
 KEY_STATUS_LOCATION = "location"
+KEY_GROUP_MEMBERS = 'members_'
 
 USER_STATUS_SIGNEDIN = "signedin" 
 USER_STATUS_SIGNEDOUT = "signedout" 
@@ -143,3 +145,11 @@ def get_user_last_location(user_id):
     if last_location:
         last_location = last_location[0]
         return last_location
+
+def set_group_members(group_id, members):
+    if not group_id or not members:
+        return
+
+    key = KEY_GROUP_MEMBERS + str(group_id)
+    cache.delete(key)
+    cache.sadd(key, *members)

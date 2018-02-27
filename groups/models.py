@@ -20,6 +20,23 @@ class Group(BaseModel):
     )
     photo = models.FileField(upload_to=group_photo_path, blank=True, null=True)
 
+    def add_member(self, user, created_by, role=''):
+        if not role:
+            role = GroupMembership.ROLE_MEMBER
+            
+        membership = GroupMembership.objects.filter(group=self, user=user)
+        if not membership.exists():
+            membership = GroupMembership.objects.create(
+                group = self,
+                user = user,
+                created_by = created_by,
+                role = role
+            )
+        else:
+            membership = membership[0]
+
+        return membership
+
     def save(self, *args, **kwargs):
         newly_created = True
         if self.id:
@@ -28,12 +45,8 @@ class Group(BaseModel):
         super(Group, self).save(*args, **kwargs)
 
         if newly_created:
-            GroupMembership.objects.create(
-                group = self,
-                user = self.created_by,
-                created_by = self.created_by,
-                role = GroupMembership.ROLE_ADMIN
-            )
+            self.add_member(self.created_by,
+                self.created_by, GroupMembership.ROLE_ADMIN)
 
 
     def is_member(self, user):
@@ -42,20 +55,6 @@ class Group(BaseModel):
     def is_admin(self, user):
         return GroupMembership.objects.filter(
             group=self, user=user, role=GroupMembership.ROLE_ADMIN).exists()
-
-    def add_member(self, user, created_by):
-        membership = GroupMembership.objects.filter(group=self, user=user)
-        if not membership.exists():
-            membership = GroupMembership.objects.create(
-                group = self,
-                user = user,
-                created_by = created_by,
-                role = GroupMembership.ROLE_MEMBER
-            )
-        else:
-            membership = membership[0]
-
-        return membership
 
 class GroupMembership(BaseModel):
     ROLE_MEMBER = 'member'
