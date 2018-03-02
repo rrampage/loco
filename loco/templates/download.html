@@ -1,0 +1,15 @@
+<!-- $base_prefix = "magicpin://"; -->
+<!-- $web_redirect_to = "https://play.google.com/store/apps/details?id=com.magicpin.local&hl=en"; -->
+<html>
+    <body>
+        <script type=text/javascript>
+            try{
+              window.location = "{{ url }}";
+              setTimeout("window.location = '{{ web_redirect_to }}';", 1000);
+            }
+            catch(e){
+              window.location = "{{ web_redirect_to }}";
+            }
+          </script>
+    </body>
+</html>

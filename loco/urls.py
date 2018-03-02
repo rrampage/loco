@@ -30,7 +30,9 @@ urlpatterns += [
     url(r'^teams/', include('teams.urls')),
     url(r'^sapi/', include('morty.urls')),
     url(r'^locations/', include('locations.urls')),
+    url(r'^groups/', include('groups.urls')),
     url(r'^events', views.UserDumpView.as_view()),
+    url(r'^download', views.get_download_link),
 ]
 
 

@@ -18,6 +18,7 @@ from .permissions import IsTeamMember, IsAdminOrReadOnly, IsAdmin, IsMe
 
 from accounts.models import User
 from accounts.serializers import UserSerializer
+from notifications.tasks import send_checkin_gcm_async
 
 class TeamList(APIView):
     permission_classes = (permissions.IsAuthenticated, )
@@ -41,8 +42,11 @@ class TeamDetail(APIView):
     def get(self, request, team_id, format=None):
         team = get_object_or_404(Team, id=team_id)
         self.check_object_permissions(self.request, team)
-        serializer = TeamSerializer(team)
-        return Response(data=serializer.data)
+        data = TeamSerializer(team).data
+        if team.is_admin(request.user):
+            data['code'] = team.code
+            
+        return Response(data=data)
 
     def put(self, request, team_id, format=None):
         team = get_object_or_404(Team, id=team_id)
@@ -82,14 +86,23 @@ class TeamMembershipList(APIView):
 
         user = User.objects.get_or_create_dummy(phone)
         membership = team.add_member(user, request.user)
-
-        #Notifiy User
-
         if membership:
             serializer = TeamMembershipSerializer(membership)
             return Response(serializer.data)
 
-        return Response(data={"errors": "Membership exists"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({})
+
+
+@api_view(['PUT'])
+@permission_classes((permissions.IsAuthenticated,))
+def join_team(request, format=None):
+    team = get_object_or_404(Team, code=request.data.get('code'))
+    membership = team.add_member(request.user, request.user)
+    if membership:
+        serializer = TeamMembershipSerializer(membership)
+        return Response(serializer.data)
+
+    return Response(status=status.HTTP_400_BAD_REQUEST)
 
 class TeamMembershipDetail(APIView):
     permission_classes = (permissions.IsAuthenticated, IsAdmin)
@@ -97,7 +110,7 @@ class TeamMembershipDetail(APIView):
     def put(self, request, membership_id, format=None):
         membership = get_object_or_404(TeamMembership, id=membership_id)
         self.check_object_permissions(self.request, membership)
-        serializer = TeamMembershipSerializer(membership, data=request.data)
+        serializer = TeamMembershipSerializer(membership, data=request.data, partial=True)
         
         if serializer.is_valid():
             serializer.save()
@@ -176,6 +189,7 @@ class CheckinList(APIView):
             checkin = serializer.save(team=team, user=request.user)
             media = request.data.get('media')
             self.add_media(checkin, media)
+            send_checkin_gcm_async.delay(checkin.id)
             return Response(serializer.data)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

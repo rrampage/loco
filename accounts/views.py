@@ -2,12 +2,15 @@ from datetime import datetime, timedelta
 from django.shortcuts import get_object_or_404
 from django.db.models import Q
 from django.contrib.auth import authenticate, login, logout
+from django.http import HttpResponseRedirect
+from django.shortcuts import render_to_response
 
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import permissions, status
 from rest_framework.authtoken.models import Token
 from rest_framework.views import APIView
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 from loco import utils
 
@@ -85,10 +88,10 @@ def logout_user(request, format=None):
 
 class UserMeDetail(APIView):
     permission_classes = (permissions.IsAuthenticated,)
+    parser_classes = (FormParser, MultiPartParser, JSONParser)
 
     def put(self, request, format=None):
-        serializer = UserSerializer(request.user, data=request.data)
-        
+        serializer = UserSerializer(request.user, data=request.data)        
         if serializer.is_valid():
             serializer.save()
             return Response(data=serializer.data)
@@ -151,3 +154,23 @@ class UserDumpView(APIView):
 
         data = UserDump.objects.create(data=data)
         return Response(UserDumpSerializer(data).data)
+
+
+@api_view(['GET'])
+def get_download_link(request):
+    PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.loco.tracker&referrer='
+
+    code = request.GET.get('code')
+    if not code:
+        return HttpResponseRedirect(PLAY_STORE_URL)
+
+    referrer = 'utm_source%3DApp%26utm_medium%3Dinvite%26utm_campaign%3DteamGrowth%26' + \
+                'invite_code%3D' + str(code) + '%26referrer_user%3D0'
+    final_url = PLAY_STORE_URL + referrer
+
+    context = {
+        'url': 'loco://join?code=' + str(code),
+        'web_redirect_to': final_url, 
+    }
+    return render_to_response('download.html', context)
+

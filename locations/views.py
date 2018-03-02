@@ -9,16 +9,18 @@ from rest_framework.response import Response
 from rest_framework import permissions, status
 from rest_framework.views import APIView
 
-from loco import utils
+from loco import utils as loco_utils
 from loco.services import cache
 
-from .filters import is_noise
+from . import utils
+from .filters import is_noise, is_pitstop
 from .models import UserLocation
 from .serializers import UserLocationSerializer
 
 from accounts.models import User
 from teams.models import Team, TeamMembership
-from teams.permissions import IsTeamMember, IsAdminOrReadOnly, IsAdminOrMe
+from teams.permissions import IsTeamMember, IsAdminOrReadOnly, IsAdminOrMe, IsAdminManagerOrReadOnly
+from teams import constants as team_constants
 from morty.services import subscribe_location, unsubscribe_location
 
 def get_snapped_mp(locations, loc_type):
@@ -89,17 +91,86 @@ def new_user_maps(request):
     }
     return render_to_response('maps.html', context)
 
+def raw_user_maps(request):
+    uid = request.GET.get('uid')
+    start = request.GET.get('start')
+    end = request.GET.get('end')
+    filter_noise = request.GET.get('filter_noise', False)
+    filter_dis = float(request.GET.get('filter_dis', 0.1))
+    locations = list(UserLocation.objects.filter(user_id=uid, timestamp__gte=start, timestamp__lte=end).order_by('timestamp'))
+    # filtered_locations = [locations[0]]
+    filtered_locations = []
+
+    for i in range(1, len(locations)):
+        l = locations[i]
+        if filter_noise and not is_noise(l, locations[i-1]):
+            filtered_locations.append((l.latitude, l.longitude, l.accuracy, False, str(l.timestamp), str(l.created), str(l.updated)))
+        elif not filter_noise:
+            filtered_locations.append((l.latitude, l.longitude, l.accuracy, False, 0))
+
+    final_locations = filtered_locations
+
+    # last_location = filtered_locations[0]
+    # last_valid_location = filtered_locations[0]
+    # final_locations = [(last_location.latitude, last_location.longitude, last_location.accuracy, False, 0)]
+    # pitstops = []
+    # for l in filtered_locations[1:]:
+    #     if is_pitstop(l, last_location):
+    #         # if l.accuracy < 25:
+    #         # if not pitstops:
+    #         #     pitstops.append(final_locations.pop())
+
+    #         pitstops.append(l)
+    #             # last_valid_location = final_locations[-1]
+    #             # if last_valid_location[2] > 25:
+    #             #     final_locations.append((l.latitude, l.longitude, l.accuracy, False, 0))
+    #             # else:
+    #             #     midpoint = utils.get_midpoint(l.latitude, l.longitude, last_valid_location[0], last_valid_location[1], last_valid_location[4])
+    #             #     final_locations.append((midpoint[0], midpoint[1], l.accuracy, True, last_valid_location[4]+1))
+    #         pass
+    #         # if l.accuracy < 25:
+    #         #     midpoint = utils.get_midpoint(l.latitude, l.longitude, last_valid_location.latitude, last_valid_location.longitude)
+    #         #     # final_locations.append((l.latitude, l.longitude, l.accuracy, True))
+    #         #     final_locations.append((midpoint[0], midpoint[1], l.accuracy, True))
+    #     else:
+    #         if pitstops:
+    #             final_locations.append(utils.get_midpoint(pitstops))
+    #             pitstops = []
+                
+    #         final_locations.append((l.latitude, l.longitude, l.accuracy, False, 0))
+    #     last_location = l
+
+
+    len_locations = len(final_locations)
+
+    context = {
+        'locations': json.dumps(final_locations),
+        'filtered_locations': final_locations, 
+        'len_locations': len_locations, 
+    }
+    return render_to_response('maps_raw.html', context)
+
 class LocationSubscriptionList(APIView):
-    permission_classes = (permissions.IsAuthenticated, IsTeamMember, IsAdminOrReadOnly)
+    permission_classes = (permissions.IsAuthenticated, IsTeamMember, IsAdminManagerOrReadOnly)
 
     def put(self, request, team_id, format=None):
         team = get_object_or_404(Team, id=team_id)
         self.check_object_permissions(self.request, team)
         user_ids = request.data.get('user_ids', [])
-        users = team.members.filter(id__in=user_ids)
+        memberships = TeamMembership.objects.filter(
+            team=team, 
+            status=team_constants.STATUS_ACCEPTED,
+            user__id__in=user_ids)
+        if request.user.teammembership_set.get(team=team).role==TeamMembership.ROLE_MANAGER:
+            memberships = [m for m in memberships 
+            if m.role==TeamMembership.ROLE_MEMBER or m.user.id==request.user.id]
+
+        users = [m.user for m in memberships]
         subscribe_location(request.user, users)
         locations = cache.get_users_last_location([u.id for u in users])
-        locations = [l for l in locations if l]
+        if locations:
+            locations = [l for l in locations if l]
+            
         return Response(locations)
 
     def delete(self, request, team_id, format=None):
@@ -117,8 +188,42 @@ class UserLocationList(APIView):
         membership = get_object_or_404(TeamMembership, team=team_id, user=user_id)
         self.check_object_permissions(self.request, membership)
 
-        date = utils.get_query_date(request, datetime.now().date())
+        date = loco_utils.get_query_date(request, datetime.now().date())
         user = membership.user
-        locations = user.userlocation_set.filter(timestamp__date=date)
-        polyline = utils.to_polyline(locations)
-        return Response({'polyline': polyline})
+        locations = user.userlocation_set.filter(timestamp__date=date).order_by('timestamp')
+        if not locations:
+            return Response({'polyline': ''})
+
+        first_location = utils.flatten_location(locations[0])
+        filtered_locations = []
+        last_valid_location = locations[0]
+        pitstops = []
+        for i in range(1, len(locations)):
+            test_location = locations[i]
+            last_location = locations[i-1]
+
+            if is_noise(test_location, last_location):
+                continue
+
+            if is_pitstop(test_location, last_valid_location):
+                if not pitstops and filtered_locations:
+                    pitstops.append(filtered_locations.pop())
+
+                pitstops.append(utils.flatten_location(test_location))
+            else:
+                if pitstops:
+                    midpoint = utils.aggregate_stop_points(pitstops)
+                    filtered_locations.append(midpoint)
+                    pitstops = []
+                filtered_locations.append(utils.flatten_location(test_location))
+            
+            last_valid_location = test_location
+
+        if pitstops:
+            midpoint = utils.aggregate_stop_points(pitstops)
+            filtered_locations.append(midpoint)
+            pitstops = []
+
+        polyline = utils.to_polyline(filtered_locations)
+        rich_polyline = utils.to_rich_polyline(filtered_locations)
+        return Response({'polyline': polyline, 'rich_polyline': rich_polyline})

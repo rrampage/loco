@@ -1,6 +1,5 @@
 import datetime
 from dateutil.parser import parse
-from time_aware_polyline import encode_time_aware_polyline
 
 
 def is_int(s):
@@ -50,15 +49,3 @@ def get_query_start_limit(request):
     start = request.query_params.get(PARAM_START, 0)
     limit = request.query_params.get(PARAM_LIMIT, 10)
     return (int(start), int(limit))
-
-def to_polyline(locations):
-    if not locations:
-        return ''
-
-    points = [
-        [location.latitude, 
-        location.longitude, 
-        location.timestamp.isoformat()] for location in locations
-    ]
-
-    return encode_time_aware_polyline(points)

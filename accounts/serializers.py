@@ -8,7 +8,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('id', 'phone','name', 'email', 'latitude', 'longitude', 'status')
+        fields = ('id', 'phone','name', 'email', 'latitude', 'longitude', 'status', 'photo')
         read_only_fields = ('id', 'phone', 'latitude', 'longitude', 'status')
 
     def get_status(self, obj):

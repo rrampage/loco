@@ -9,6 +9,9 @@ from .usermanager import UserManager, UserOtpManager
 
 from teams import constants as teams_constants
 
+def user_photo_path(instance, filename):
+    return 'users/{0}/photos/{1}'.format(instance.id, filename)
+
 class User(AbstractBaseUser, PermissionsMixin):
     name = models.CharField(max_length=80)
     email = models.EmailField(max_length=255, blank=True)
@@ -19,6 +22,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     longitude = models.FloatField(null=True)
     is_staff = models.BooleanField(default=False)
     is_online = models.BooleanField(default=False)
+    photo = models.FileField(upload_to=user_photo_path, blank=True, null=True)
 
     objects = UserManager()
 

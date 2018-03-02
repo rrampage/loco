@@ -2,13 +2,15 @@ from django.conf.urls import url, include
 from rest_framework.urlpatterns import format_suffix_patterns
 
 from . import views
-from locations import views as location_views 
+from locations import views as location_views
+from groups import views as groups_views
 
 
 urlpatterns = [
 	url(r'^$', views.TeamList.as_view()),
 	url(r'^(?P<team_id>[0-9]+)/$', views.TeamDetail.as_view()),
 	url(r'^(?P<team_id>[0-9]+)/chats/$', views.get_chats),
+	url(r'^join/$', views.join_team),
 	url(r'^(?P<team_id>[0-9]+)/status/$', views.TeamMembershipStatus.as_view()),
 	url(r'^(?P<team_id>[0-9]+)/members/$', views.TeamMembershipList.as_view()),
 	url(r'^(?P<team_id>[0-9]+)/members/(?P<user_id>[0-9]+)/$', views.TeamMemberDetail.as_view()),
@@ -21,6 +23,7 @@ urlpatterns = [
     url(r'^(?P<team_id>[0-9]+)/media/checkins$', views.checkin_media_upload),
 	url(r'^(?P<team_id>[0-9]+)/subscriptions/$', location_views.LocationSubscriptionList.as_view()),
 	url(r'^(?P<team_id>[0-9]+)/threads/(?P<thread_id>.+)$', views.MessagesList.as_view()),
+	url(r'^(?P<team_id>[0-9]+)/groups/$', groups_views.GroupList.as_view()),
 ]
 
 urlpatterns = format_suffix_patterns(urlpatterns)

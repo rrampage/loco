@@ -1,9 +1,7 @@
 from rest_framework import serializers
-from teams.models import  Attendance, Message
 
-from accounts.serializers import UserSerializer
-from teams.serializers import TeamSerializer
-from locations.serializers import UserLocation
+from teams.models import  Attendance, Message
+from locations.models import UserLocation
 
 class AttendanceSerializer(serializers.ModelSerializer):
     message_id = serializers.CharField(max_length=40)

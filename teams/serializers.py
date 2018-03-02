@@ -9,7 +9,7 @@ class TeamSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Team
-        exclude = ('members', )
+        exclude = ('members', 'code')
         read_only_fields = ('created_by', 'created', 'updated')
 
     def create(self, validated_data):
@@ -32,6 +32,13 @@ class TeamMembershipSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return Team.objects.create(**validated_data)
+
+    def to_representation(self, obj):
+        data = super(TeamMembershipSerializer, self).to_representation(obj)
+        if data.get('role') == TeamMembership.ROLE_ADMIN:
+            data['team']['code'] = obj.team.code
+
+        return data
 
 class CheckinMediaSerializer(serializers.ModelSerializer):
     class Meta:

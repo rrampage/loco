@@ -1,4 +1,4 @@
-import uuid
+import uuid, random
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.conf import settings
@@ -8,6 +8,16 @@ from loco.models import BaseModel, BaseLocationModel
 
 from . import constants
 
+
+_CODE_BASE = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
+
+def get_team_code():
+    code = ''
+    secure_random = random.SystemRandom()
+    for i in range(6):
+        code += secure_random.choice(_CODE_BASE)
+
+    return code
 
 class Team(BaseModel):
     name = models.CharField(max_length=60)
@@ -19,6 +29,7 @@ class Team(BaseModel):
         through='TeamMembership',
         through_fields=('team', 'user'),
     )
+    code = models.CharField(max_length=10, default=get_team_code, unique=True)
 
     def save(self, *args, **kwargs):
         newly_created = True
@@ -43,21 +54,32 @@ class Team(BaseModel):
         return TeamMembership.objects.filter(
             team=self, user=user, role=TeamMembership.ROLE_ADMIN).exists()
 
+    def is_manager(self, user):
+        return TeamMembership.objects.filter(
+            team=self, user=user, role=TeamMembership.ROLE_MANAGER).exists()
+
     def add_member(self, user, created_by):
-        if not self.is_member(user):
-            return TeamMembership.objects.create(
+        membership = TeamMembership.objects.filter(team=self, user=user)
+        if not membership.exists():
+            membership = TeamMembership.objects.create(
                 team = self,
                 user = user,
                 created_by = created_by,
                 role = TeamMembership.ROLE_MEMBER,
                 status = constants.STATUS_INVITED
             )
+        else:
+            membership = membership[0]
+
+        return membership
 
     def get_chat_members(self, user):
         try:
             membership = TeamMembership.objects.get(user=user, team=self)
             if membership.role == TeamMembership.ROLE_ADMIN:
                 return TeamMembership.objects.filter(team=self).exclude(user=user)
+            elif membership.role == TeamMembership.ROLE_MANAGER:
+                return TeamMembership.objects.filter(team=self, role=TeamMembership.ROLE_MEMBER)
             elif membership.role == TeamMembership.ROLE_MEMBER:
                 return TeamMembership.objects.filter(team=self, role=TeamMembership.ROLE_ADMIN)
         except ObjectDoesNotExist:
@@ -93,7 +115,7 @@ class Team(BaseModel):
                 attendance = user.attendance_set.filter(timestamp__date=date)
                 checkins = user.checkin_set.filter(timestamp__date=date)
                 location_events = user.locationstatus_set.filter(timestamp__date=date)
-                phone_events = user.phonestatus_set.filter(timestamp__date=date)
+                # phone_events = user.phonestatus_set.filter(timestamp__date=date)
 
             events = list(attendance) + list(checkins) + list(location_events) + list(phone_events)
             return self._sort_events(events)
@@ -115,7 +137,7 @@ class Team(BaseModel):
                 attendance = user.attendance_set.all().order_by('-timestamp')[0:start+limit]
                 checkins = user.checkin_set.all().order_by('-timestamp')[0:start+limit]
                 location_events = user.locationstatus_set.all().order_by('-timestamp')[0:start+limit]
-                phone_events = user.phonestatus_set.all().order_by('-timestamp')[0:start+limit]
+                # phone_events = user.phonestatus_set.all().order_by('-timestamp')[0:start+limit]
 
             events = list(attendance) + list(checkins) + list(location_events) + list(phone_events)
             events = self._sort_events(events)
@@ -161,7 +183,7 @@ class TeamMembership(BaseModel):
 
 class Checkin(BaseLocationModel):
     team = models.ForeignKey(Team, on_delete=models.DO_NOTHING)
-    description = models.TextField()
+    description = models.TextField(blank=True)
 
 def checkin_media_path(instance, filename):
     return 'teams/{0}/users/{1}/checkins/{2}/{3}'.format(

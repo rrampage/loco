@@ -12,7 +12,7 @@ class UserLocationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserLocation
-        fields = '__all__'
+        exclude = ('team', )
         read_only_fields = ('created', 'updated')
 
 
@@ -21,7 +21,7 @@ class LocationStatusSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LocationStatus
-        fields = '__all__'
+        exclude = ('team', )
         read_only_fields = ('created', 'updated')
 
 
@@ -30,5 +30,5 @@ class PhoneStatusSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PhoneStatus
-        fields = '__all__'
+        exclude = ('team', )
         read_only_fields = ('created', 'updated')
